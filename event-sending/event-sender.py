@@ -2,10 +2,20 @@
 """
 Post events and status to the Ssimma Hipskotch production instance. 
 
-A valikd SCiMMA SCAM API key should be in 
-
 """
 
+epilog = """
+OUr channel is cmb-s4-fabric-tests.phase-one-testing
+Before use,
+   - obtain an indentity and scram creential from my.hop.scimma.org
+   - use "hop auth add" to store the credential
+   - Ask Dn to put you in th eright group in scimma
+
+to see what's been published:
+ - hop subscribe kafka://kafka.scimma.org/cmb-s4-fabric-tests.phase-one-testing
+Whant more? : A tutorial from SCIMMA is here
+https://github.com/scimma/hop-client/wiki/Tutorial%3A-using-hop-client-with-the-SCiMMA-Hopskotch-server
+"""
 import argparse
 import subprocess
 import logging
