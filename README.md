@@ -22,19 +22,18 @@ and write up results.
 Notes on SCIMMA HOP usage 
 ==========================
 
-we are using the pip hop-client package
+We are using the hop-client package availabel from pip.
 
-OUr channel is cmb-s4-fabric-tests.phase-one-testing                                                                                                                    
+In the scimma hopskotch instance, The phase one channel is cmb-s4-fabric-tests.phase-one-testing                                                                                                                    
 Before use,                                                                                                                                                            
-   - obtain an indentity and scram creential from my.hop.scimma.org                                                                                                    
+   - obtain an indentity and scram credential from my.hop.scimma.org                                                                                                   
    - use the "hop auth add" to store the credential                                                                                                                    
-   - Ask Don to put you in the right group in scimma or make you a co-admin of the grop.  
+   - Ask Don to authorize you to acess the cmb-s4-fabric-tests.phase-one-testing topic. 
 
 To see what you publish,  use this:
 
-`hop subscribe  kafka://kafka.scimma.org/cmb-s4-fabric-tests.phase-one-testing
+`hop subscribe  kafka://kafka.scimma.org/cmb-s4-fabric-tests.phase-one-testing`
 
 want  more? : A [Tutorial](https://github.com/scimma/hop-client/wiki/Tutorial%3A-using-hop-client-with-the-SCiMMA-Hopskotch-server).l from SCIMMA is here
 
-If you get errors about certificates
--t  See Don (after he fixed this yet again and remebers how)
+If you get errors about certificates See Don (after he fixed this yet again and remebers how)
