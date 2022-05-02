@@ -32,23 +32,24 @@ Before use,
    - use the "hop auth add" to store the credential                                                                                                                    
    - Ask Don to authorize you to acess the cmb-s4-fabric-tests.phase-one-testing topic. 
 
-To see what you publish,  use this:
+scimma_utils
+============
 
-`hop subscribe  kafka://kafka.scimma.org/cmb-s4-fabric-tests.phase-one-testing`
-
-want  more? : A [Tutorial](https://github.com/scimma/hop-client/wiki/Tutorial%3A-using-hop-client-with-the-SCiMMA-Hopskotch-server).l from SCIMMA is here
-
-If you get errors about certificates See the following
-'You can just open the certificate archive with a text editor; mine is located at ${VIRTUAL_ENV}/lib/python3.7/site-packages/certifi/cacert.pem
+The scimma_utils packages included here further wraps the pbulish and subscribe subfunctions in hop.
 
 
-10:21
-Once you have it open, you can just search for DST Root CA X3, delete/cut that certificate out of it, save, and see if things get any better?
 
-Donald Petravick  10:22 AM
-ok what am I lookign for
-DST?
+More about hop
+=============
+[Tutorial](https://github.com/scimma/hop-client/wiki/Tutorial%3A-using-hop-client-with-the-SCiMMA-Hopskotch-server) from SCiMMA is here
 
-Chris Weaver  10:23 AM
-DST Root CA X3
+If you get errors about certificates
+====================================
+yout OS may be suppliing a version of openssl with a bug in it.
+A work around is:
+- $hop auth locate
+- cat the file gven by hop auth locate
+- edit the file pointed to by ssl_ca_location
+- find the DST Root CA X3, in that file delete/cut that certificate out of it,
+
 '
