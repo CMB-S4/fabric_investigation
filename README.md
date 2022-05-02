@@ -46,7 +46,7 @@ Shell Command documentation is [here](https://hop-client.readthedocs.io/en/lates
 
 If you get errors about certificates
 ====================================
-yout OS may be suppliing a version of openssl with a bug in it.
+your OS may be supplying a version of openssl with a bug in it.
 A work around is:
 - $hop auth locate
 - cat the file gven by hop auth locate
