@@ -29,8 +29,9 @@ In the scimma hopskotch instance, The phase one channel is
 
 Before use,                                                                                                                                                            
    - obtain an identity and SCRAM credential from my.hop.scimma.org                                                                                                   
-   - use the "hop auth add" to store the credential                                                                                                                    
-   - Ask Don to authorize you to acess the cmb-s4-fabric-tests.phase-one-testing topic. 
+   - use the "hop auth add" to store the credential (Leave hostname blank)
+   - Ask Don to authorize you to acess the cmb-s4-fabric-tests.phase-one-testing topic.
+   - arrange for outbound (kafka) port 9092 to be open 
 
 scimma_utils
 ============
