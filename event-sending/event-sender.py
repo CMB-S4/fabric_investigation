@@ -20,17 +20,38 @@ def send_file (args):
     cmd = "hop publish --format BLOB kafka://kafka.scimma.org/<your.topic> {}".format(args.filename)
     invoke_hop(cmd)
 
-def send_status(args):
-    cmd = "echo {} | hop publish --format BLOB kafka://kafka.scimma.org/cmb-s4-fabric-tests.phase-one-testing ".format(args.status_text)
-    invoke_hop(cmd)
+def send_message(args):
+    #wrap ccommandline and  then publish
+    import json
+    import time
+    import socket
+    jstring = json.dumps({"time": time.time(),
+                          "ctime": time.ctime(),
+                         "user":os.getlogin(),
+                         "host": socket.gethostname(),
+                         "message": args.message_text
+                          }
+                        )
+    jstring = jstring.encode("utf-8")
+    logging.info("full message json:{}",format(jstring))
+    cmd = "hop publish --format BLOB kafka://kafka.scimma.org/cmb-s4-fabric-tests.phase-one-testing "
+    logging.info("about to run: {}".format(cmd))
+    result = subprocess.run(cmd,input=jstring, shell=True)
+    logging.info("return status is: {}".format(result.returncode))
+    exit (result.returncode)
 
+def subscribe(args):
+    cmd = "hop subscribe  -s {}  kafka://kafka.scimma.org/cmb-s4-fabric-tests.phase-one-testing".format(args.when)
+    logging.info("about to run: {}".format(cmd))
+    result = subprocess.run(cmd,shell=True)
+    logging.info("return status is: {}".format(result.returncode))
+    exit (result.returncode) 
+    
 def invoke_hop(cmd):
     logging.info("about to run: {}".format(cmd))
-    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-    logging.info("Stdout  of Publish:{}".format(result.stdout))
-    if result.returncode == 0 :
-        logging.error("Could not publish Stderr:{}".format(result.stderr))
-        exit(result.returncode)
+    result = subprocess.run(cmd,  shell=True)
+    logging.info("return status is: {}".format(result.returncode))
+    exit(result.returncode)
         
 if __name__ == "__main__":
 
@@ -56,15 +77,21 @@ if __name__ == "__main__":
     pub_p.add_argument('filename', type=str, help='Name of file of events to publish.')
     pub_p.set_defaults(func=send_file)
     
-    status_p = subparsers.add_parser('status', help='send status passed via command line.')
-    status_p.add_argument('status_text', type=str, help='Status text')
-    status_p.set_defaults(func=send_status)
+    message_p = subparsers.add_parser('message', help='send message passed via command line.')
+    message_p.add_argument('message_text', type=str,
+                        help='Message text, which be suppimented by  meta data')
+    message_p.set_defaults(func=send_message)
+
+    sub_p = subparsers.add_parser('subscribe', help='subscroivbe to the test topic (to verify transmission')
+    sub_p.add_argument("-w","--when", choices=["EARLIEST","LATEST"], default="EARLIEST",
+                       help= "See all (EARLIEST)default, or wait for new stuff(LATEST)")
+    sub_p.set_defaults(func=subscribe)
+    
 
     args = parser.parse_args()
-    logging.debug("arguments are:{}".format(args))
-    
-    logging.basicConfig(level=logging.__dict__[args.loglevel])
 
+    logging.basicConfig(level=logging.__dict__[args.loglevel])
+    logging.debug("arguments are:{}".format(args))
     args.func(args)
     
 
