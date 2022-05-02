@@ -31,7 +31,9 @@ Before use,
    - obtain an identity and SCRAM credential from my.hop.scimma.org                                                                                                   
    - use the "hop auth add" to store the credential (Leave hostname blank)
    - Ask Don to authorize you to acess the cmb-s4-fabric-tests.phase-one-testing topic.
-   - arrange for outbound (kafka) port 9092 to be open 
+   - arrange for outbound (kafka) port 9092 to be open
+   - test connectivity with 'echo 'test' | nc -w 10 kafka.scimma.org 9092; echo $?'
+   
 
 scimma_utils
 ============
