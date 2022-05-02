@@ -41,7 +41,8 @@ The scimma_utils packages included here further wraps the pbulish and subscribe 
 
 More about hop
 =============
-[Tutorial](https://github.com/scimma/hop-client/wiki/Tutorial%3A-using-hop-client-with-the-SCiMMA-Hopskotch-server) from SCiMMA is here
+Tutorial is [here](https://github.com/scimma/hop-client/wiki/Tutorial%3A-using-hop-client-with-the-SCiMMA-Hopskotch-server).
+Shell Command documentation is [here](https://hop-client.readthedocs.io/en/latest/user/commands.html).
 
 If you get errors about certificates
 ====================================
