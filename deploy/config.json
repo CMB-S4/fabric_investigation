@@ -1,0 +1,13 @@
+[
+    {"ConfigurationName": "DEFAULT",
+     "ConfigurationElements" :
+     [
+         {
+        "Cores"       : 10,
+        "RAM_G"       : 40,
+         "DISK_G"     : 50,
+        "NET_BASIC"   : 1
+         }
+    ]
+    }
+]
