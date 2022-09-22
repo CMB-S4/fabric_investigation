@@ -1,4 +1,9 @@
+
+image = "rockyLinux"
+
 class Slice:
+    # collect all the objects to make a slice
+    # then 
     def __init__(self, name):
         self.name = name
         self.registered_nodes    =[]
@@ -7,20 +12,27 @@ class Slice:
     def register_node(self, node):
         self.registered_nodes.append(node)
         
-    def self.register_network(self, network):
+    def register_network(self, network):
         self.registered_networks.append(network)
         
-    def submit():
+    def submit(self):
+        self.slice = fablib.new_slice(name=self.name)
         for node in self.registered_nodes:
             node.declare()
         for network in self.registered_networks:
             network.declare()
         self.submit()
-    
+
+    def show(self):
+        import pprint
+        pprint.pprint(var(self))
+        for node in self.registered_nodes: node.show()
+        for network in self.registered_networks: network.show()
+
 
 class Node:
-    def __init (self, slice, name, site, **kwargs):
-        drlf.slice = slice
+    def __init__ (self, slice, name, site, **kwargs):
+        self.slice = slice
         self.name = name 
         self.site = site
         self.cores = 1
@@ -33,27 +45,42 @@ class Node:
         if "disk"  in kwargs :  self.disk  = kwargs["disk"]
         self.slice.register_node(self)
 
-    def add_iface(self, model, name):
+    def add_nic(self, model, name):
         # Make the interface and record in the dictionary of all interfaces. 
-        iface = self.node.add_compoment((model=model, name=).get_interfaces()[0])
-        self.iface[name] = {"iface" : iface ; "model" ; model}]
-                                          
-    def declare()
+        self.ifaces[name] = {"model" : model}
+        
+    def get_iface(self, name):
+        import pdb; pdb.set_trace()
+        return self.ifaces[name]["iface"]
+
+    def show(self):
+        import pprint
+        pprint.pprint(var(self))
+
+    def declare():
         self.node = self.slice.add_node(name=self.name, site=self.site.name)
         self.node.set_capacities(cores=self.cores, ram=self.ram, disk=self.disk)
         self.node.set_image(self.image)
+        for iface in ifaces.keys():
+            model = iface["model"]
+            iface = self.node.add_compoment(model=model, name=name).get_interfaces()[0]
+            iface["iface"]=iface
 
 class L2Network:
-    def __init__(self, slice, anem niclist=[]):
+    def __init__(self, slice, niclist=[]):
         self.name = name
         self.niclist = niclist
         self.slice.register_node(self)
-        
+        self.network = None
+    
     def declare(self):
-        net1 = self.slice.add_l2network(name=self.name, interfaces=[iface1, iface2])
+        self.network = self.slice.add_l2network(name=self.name, interfaces=niclist)
+
+    def show(self):
+        import pprint
+        pprint.pprint(var(self))
         
-
-
+        
 #
 #   use of this 
 IMAGE = 'default_rocky_8'
@@ -65,8 +92,10 @@ node1.add_nic('NIC_Basic', 'GP') #general purpose NIC
 
 node2 = Node(s, 'CMBS4Node_tacc2', 'TACC',
               disk=1, cores=2, ram=10, image=image)
-node1.add_nic('NIC_Basic', 'GP') #general purpose NIC
+node2.add_nic('NIC_Basic', 'GP') #general purpose NIC
 
-net1 = L2Network(s, 'net1',[node1.get_nic("GP"), node2.get_nic("GP")])
+net1 = L2Network(s, 'net1',[node1.get_iface("GP"), node2.get_face("GP")])
 
-s.submit()
+s.show()
+
+#s.submit()
