@@ -9,11 +9,11 @@ def show(object):
         for (key, value) in items.items():
             if key == "name" : continue
             if type(value) in types:
-                print ("  {}:{}".format(key, value))
+                print ("    {}:{}".format(key, value))
             elif type(value) == type([]):
-                    print("   {} {}".format(key, [v.name  for v in  value]))
+                    print("     {} {}".format(key, [v.name  for v in  value]))
             elif  type(value) == type({}):
-                    print("   {} {}".format(key, value.keys()))
+                    print("     {} {}".format(key, value.keys()))
              
             
 
