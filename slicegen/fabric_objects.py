@@ -1,4 +1,38 @@
+"""
 
+A collection of objects that provies resources in FABRIC for
+CMB-S4 Phase one.
+
+In fabric, a unit of provisioning is a *slice*.  For CMB-S4 a slice is
+a collection of nodes and networks.  Nodes contain interfaces that are
+attachend for networks.  A node with more than one interface is
+usually on multiple networks.
+
+A file of python object declaration is the configuration file. in The
+configjuraion fike the user specifies a slice, and anhy number of
+network and node objects. The configuration file processing program ,
+*Planner.py* will import and cause the objects to be instantated and
+run at the  "plan" or "apply" Level.
+
+"Plan level" prints out, in human readable form, a good deal of
+information about what wuuld be instantiated. This output helps an
+author determe whether the configuration is what was intended, and can
+serve to document the configuration.  Planning does not allocate
+resources in FABRIC, and does not cause any FABRIC API's to be called.
+i.e. A user running at Plan level need not be credentialed to access
+FABRIC.
+
+"Apply level" repeats the steps of planning, and then calls FABRIC
+APIS to instantiate the plan. A slice object is instantiated, then
+networks then nodes.
+
+The CMB_s4 phase one use case is to "inflate" a system, demonstrate
+data flows and processing, then tear the system down. Modifying
+a running  system using fabric_objects is not in the use case.  WHen
+the demonstraton is done, the only action supported is to tear the
+slice down.
+
+"""
 def show(object):
      types = [type(1),type(None),type(True),type(""), type(1.0) ]
      items = vars(object)
@@ -6,11 +40,11 @@ def show(object):
      for (key, value) in items.items():
         if key == "name" : continue
         if type(value) in types:
-                print ("    {}:{}".format(key, value))
+                print ("\t{}:{}".format(key, value))
         elif type(value) == type([]):
-                print("     {} {}".format(key, [v.name  for v in  value]))
+                print("\t{} {}".format(key, [v.name  for v in  value]))
         elif  type(value) == type({}):
-                print("     {} {}".format(key, value.keys()))
+                print("\t{} {}".format(key, value.keys()))
              
             
 
@@ -19,8 +53,9 @@ class Slice:
      # then 
      def __init__(self, name):
         self.name = name
-        self.registered_nodes    =[]
-        self.registered_networks =[]
+        self.registered_nodes    = []
+        self.registered_networks = []
+        self.sleep_before_submit = 4
         
      def register_node(self, node):
         self.registered_nodes.append(node)
@@ -30,10 +65,11 @@ class Slice:
         
      def submit(self):
         self.slice = fablib.new_slice(name=self.name)
-        for node in self.registered_nodes:
-            node.declare()
         for network in self.registered_networks:
             network.declare()
+        for node in self.registered_nodes:
+            node.declare()
+        time.sleep(self.sleep_before_submit)
         self.submit()
 
      def plan(self):
@@ -77,17 +113,28 @@ class Node:
 
 
 class L2Network:
-     def __init__(self, slice, name, niclist):
+     def __init__(self, slice, name, niclist, **kwargs):
           self.name = name
           self.niclist = niclist
           self.slice = slice
-          self.slice.register_network(self)
           self.network = None
+          self.subnet = self.random_IPV6_subnet()
+          if "subnet" in kwargs :  self.subnet = kwargs["subnet"]
+          self.slice.register_network(self)
     
      def apply(self):
-          ilist = [n.iface for n in self.niclist]
+          iflist = [n.iface for n in self.niclist]:
+          for if in iflist:
+               pass #assign an IF and IP address 
           self.network = self.slice.add_l2network(name=self.name, interfaces=niclist)
-        
+          
+
+     def random_IPV6_subnet(self):
+          import random
+          x =  [int(random.random()*9999) for i in range(3)]
+          x = "{}:{}:{}/64".format(*x)
+          return x
+     
      def plan(self):
           show(self)
 
