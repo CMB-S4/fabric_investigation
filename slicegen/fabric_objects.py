@@ -45,7 +45,7 @@ def show(object):
         elif type(value) == type([]):
                 print("\t{} {}".format(key, [v.name  for v in  value]))
         elif  type(value) == type({}):
-                print("\t{} {}".format(key, value.keys()))
+                print("\t{} {}".format(key, value()))
              
 class Fabric_Base:
      """
@@ -58,14 +58,14 @@ class Fabric_Base:
           print (items["name"])
           for (key, value) in items.items():
                if key == "name" : continue
-               if type(value) in types:
+               if type(value) in self.scalar_types:
                     print ("\t{}:{}".format(key, value))
                elif type(value) == type([]):
                     print("\t{} {}".format(key, [v.name  for v in  value]))
                elif  type(value) == type({}):
                     print("\t{} {}".format(key, value.keys()))
                else:
-                    print("\t{} {}".format(key, value.keys()))
+                    print("\t{} {}".format(key, value))
 
 class Slice(Fabric_Base):
      """
@@ -86,6 +86,7 @@ class Slice(Fabric_Base):
         self.name = name
         self.registered_nodes    = []
         self.registered_networks = []
+        self.registered_nics     = []
         self.delay = 4
         if "delay"  in kwargs :  self.delay  = kwargs["delay"]
         
@@ -94,7 +95,10 @@ class Slice(Fabric_Base):
         
      def register_network(self, network):
         self.registered_networks.append(network)
-        
+
+     def register_nic(self, network):
+        self.registered_nics.append(network)
+
      def submit(self):
         self.slice = fablib.new_slice(name=self.name)
         for network in self.registered_networks:
@@ -105,9 +109,10 @@ class Slice(Fabric_Base):
         self.submit()
 
      def plan(self):
-        show(self)
-        for node in self.registered_nodes: node.plan()
+        self.show()
+        for node in self.registered_nodes:       node.plan()
         for network in self.registered_networks: network.plan()
+        for nic     in self.registered_nics:     nic.plan() 
 
 
 class Node(Fabric_Base):
@@ -116,7 +121,7 @@ class Node(Fabric_Base):
 
      slice  - slice object
      name   - unique human-readbale name of node
-     image  - Operataing system image to load on node
+     image  - Operating system image to load on node
      
      Kwargs:
      - cores -- Number of cores for node (def 20)
@@ -145,7 +150,7 @@ class Node(Fabric_Base):
           #    nic.iface = self.node.add_component(nic.model, nic.name).get_interfaces()[0]
 
      def plan(self):
-          show(self)
+          self.show()
 
 
 class L2Network(Fabric_Base):
@@ -181,7 +186,8 @@ class L2Network(Fabric_Base):
           return x
      
      def plan(self):
-          show(self)
+        self.show()
+          
 
 
 class Nic(Fabric_Base):
@@ -201,9 +207,12 @@ class Nic(Fabric_Base):
           self.node    = node
           self.network = network
           self.model   = kwargs.get("model", "NIC_Basic")
+          slice.register_nic(self)
+
 
      def plan(self):
-          show(self)
+          self.show()
+
 
 
 
