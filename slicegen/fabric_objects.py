@@ -137,10 +137,6 @@ class Node(Fabric_Base):
           self.nics  = {}
           self.slice.register_node(self)
 
-     def add_nic(self, model, name):
-          # Make the interface and record in the dictionary of all interfaces. 
-          self.nics[name] = Nic(self, name, mode, network_namal)
-
      def apply():
           self.node = self.slice.add_node(name=self.name, site=self.site.name)
           self.node.set_capacities(cores=self.cores, ram=self.ram, disk=self.disk)
@@ -200,7 +196,7 @@ class Nic(Fabric_Base):
      Kwargs:
      - model -- NIC model (def NIC_Basic))
      """
-     def __init__ (self, slice,  node, network, **kawrgs):
+     def __init__ (self, slice,  name,  node, network, **kwargs):
           self.name    = name
           self.node    = node
           self.network = network
