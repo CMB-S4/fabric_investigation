@@ -34,19 +34,10 @@ the demonstraton is done, the only action supported is to tear the
 slice down.
 
 """
-def show(object):
-     types = [type(1),type(None),type(True),type(""), type(1.0) ]
-     items = vars(object)
-     print (items["name"])
-     for (key, value) in items.items():
-        if key == "name" : continue
-        if type(value) in types:
-                print ("\t{}:{}".format(key, value))
-        elif type(value) == type([]):
-                print("\t{} {}".format(key, [v.name  for v in  value]))
-        elif  type(value) == type({}):
-                print("\t{} {}".format(key, value()))
-             
+
+from fabrictestbed.slice_manager import SliceManager, Status, SliceState
+from fabrictestbed_extensions.fablib.fablib import fablib
+
 class Fabric_Base:
      """
      a base clase for all objects in config file
@@ -99,12 +90,11 @@ class Slice(Fabric_Base):
      def register_nic(self, network):
         self.registered_nics.append(network)
 
-     def submit(self):
+     def apply(self):
         self.slice = fablib.new_slice(name=self.name)
-        for network in self.registered_networks:
-            network.declare()
-        for node in self.registered_nodes:
-            node.declare()
+        for node in self.registered_nodes: node.apply()
+        for network in self.registered_networks: network.apply()
+        for nic in self.registered_nics: nic.apply()
         time.sleep(self.delay)
         self.submit()
 
@@ -132,7 +122,7 @@ class Node(Fabric_Base):
  
      """
      def __init__ (self, slice, name, image, **kwargs):
-          self.slice = slice
+          self.Slice = slice  #Slice wrapper object 
           self.name  = name
           self.image = image
           self.site  = kwargs.get("site"  , "NCSA")
@@ -140,10 +130,11 @@ class Node(Fabric_Base):
           self.ram   = kwargs.get("ram"   , 40)
           self.disk  =  kwargs.get("disk" , 100)
           self.nics  = {}
-          self.slice.register_node(self)
+          self.Slice.register_node(self)
 
-     def apply():
-          self.node = self.slice.add_node(name=self.name, site=self.site.name)
+     def apply(self):
+          slice = self.Slice.slice
+          self.node = slice.add_node(name=self.name, site=self.site)
           self.node.set_capacities(cores=self.cores, ram=self.ram, disk=self.disk)
           self.node.set_image(self.image)
           #for nic in self.nics.keys():
@@ -165,19 +156,17 @@ class L2Network(Fabric_Base):
      
      """
      def __init__(self, slice, name,  **kwargs):
-          self.slice = slice
+          self.Slice = slice  #Slice wrapper object 
           self.name = name
           self.network = None
           self.subnet = self.random_IPV6_subnet()
           if "subnet" in kwargs :  self.subnet = kwargs["subnet"]
-          self.slice.register_network(self)
+          self.Slice.register_network(self)
     
      def apply(self):
-          iflist = [n.iface for n in self.niclist]
-          for iface in iflist:
-               pass #assign an IF and IP address 
-          self.network = self.slice.add_l2network(name=self.name, interfaces=niclist)
-          
+          import pdb ; pdb.set_trace()
+          slice = self.Slice.slice
+          self.network = slice.add_l2network(name=self.name)          
 
      def random_IPV6_subnet(self):
           import random
@@ -212,6 +201,9 @@ class Nic(Fabric_Base):
 
      def plan(self):
           self.show()
+
+     def apply(self):
+          pass
 
 
 

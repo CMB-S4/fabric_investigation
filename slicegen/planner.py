@@ -1,6 +1,6 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
-Plan and provision resouces in FABRIC.
+Plan and provision resources in FABRIC.
 
 """
 
@@ -20,6 +20,10 @@ def plan(args):
 def apply(args):
      if ".py" in args.configuration:
           args.configuration = args.configuration[:-3]
+     import importlib
+     #import pdb; pdb.set_trace()
+     importlib.invalidate_caches()
+     #module = importlib.import_module(args.configuration, package=None)
      exec ("import {}".format(args.configuration))
      exec ("{}.apply()".format(args.configuration))
 

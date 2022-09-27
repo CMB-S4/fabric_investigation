@@ -7,6 +7,7 @@ cores = 32
 ram = 128
 disk = 100
 
+
 slice = fo.Slice('MySliceSep12B')
 
 net1 = fo.L2Network(slice, 'net1')
@@ -29,6 +30,5 @@ fo.Nic(slice, "Node2.NIC1", node2, net1)
 
 def plan(): slice.plan()
 def apply():
-    from fabrictestbed.slice_manager import SliceManager, Status, SliceState
-    from fabrictestbed_extensions.fablib.fablib import fablib    
+    import pdb; pdb.set_trace()
     slice.apply()
