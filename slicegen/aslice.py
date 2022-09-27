@@ -1,5 +1,5 @@
-#
 import fabric_objects as fo
+
 
 # default quantiteis
 image = 'default_rocky_8'
@@ -28,4 +28,7 @@ fo.Nic(slice, "Node2.NIC1", node2, net1)
 #
 
 def plan(): slice.plan()
-def apply():slice.apply()
+def apply():
+    from fabrictestbed.slice_manager import SliceManager, Status, SliceState
+    from fabrictestbed_extensions.fablib.fablib import fablib    
+    slice.apply()

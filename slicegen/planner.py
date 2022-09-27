@@ -12,13 +12,17 @@ import logging
 #                
 def plan(args):
      #show plan, but do instantiate stuff.
-     if ".py" in args.plan:
-          args.plan = args.plan[:-3]
-     exec ("import {}".format(args.plan))
-     exec ("{}.plan()".format(args.plan))
+     if ".py" in args.configuration:
+          args.configuration = args.configuration[:-3]
+     exec ("import {}".format(args.configuration))
+     exec ("{}.plan()".format(args.configuration))
 
 def apply(args):
-     plan = open(args.plan, "r").read()
+     if ".py" in args.configuration:
+          args.configuration = args.configuration[:-3]
+     exec ("import {}".format(args.configuration))
+     exec ("{}.apply()".format(args.configuration))
+
 
 def template(args):
      pass
@@ -40,12 +44,12 @@ if __name__ == "__main__":
      #list but not execute. 
      subparser = subparsers.add_parser('plan', help=list.__doc__)
      subparser.set_defaults(func=plan)
-     subparser.add_argument("plan", help = "plan file")
+     subparser.add_argument("configuration", help = "configuration file")
 
      #instanitate
      subparser = subparsers.add_parser('apply', help=apply.__doc__)
      subparser.set_defaults(func=apply)
-     subparser.add_argument("plan", help = "plan file")
+     subparser.add_argument("configuration", help = "configuration file")
 
      args = parser.parse_args()
 

@@ -52,7 +52,7 @@ class Fabric_Base:
      a base clase for all objects in config file
      """
      scalar_types = [type(1),type(None),type(True),type(""), type(1.0) ]
-     
+          
      def show(self):
           items = vars(self)
           print (items["name"])
