@@ -6,8 +6,8 @@ CMB-S4 Phase one.
 In fabric, a unit of provisioning is a *slice*.  For CMB-S4 a slice is
 a collection of nodes and networks.  Nodes contain interfaces that are
 attachend for networks.  A node with more than one interface is
-usually on multiple networks. a "NIC" object describes tme means a
-node uses to connect to a network,
+usually on multiple networks. a "NIC" object describes the means a
+node uses to connect to a network and the network to connect to.
 
 A file of python object declaration is the configuration file. in The
 configjuraion fike the user specifies a slice, and anhy number of
@@ -25,7 +25,8 @@ FABRIC.
 
 "Apply level" repeats the steps of planning, and then calls FABRIC
 APIS to instantiate the plan. A slice object is instantiated, then
-networks, nodes and nics.
+nodes, nics and finally networks (which seem to need to knmw all
+the nic interfaces when they are created.
 
 The CMB_s4 phase one use case is to "inflate" a system, demonstrate
 data flows and processing, then tear the system down. Modifying
@@ -37,6 +38,7 @@ slice down.
 
 from fabrictestbed.slice_manager import SliceManager, Status, SliceState
 from fabrictestbed_extensions.fablib.fablib import fablib
+import time
 
 class Fabric_Base:
      """
@@ -87,8 +89,8 @@ class Slice(Fabric_Base):
      def register_network(self, network):
         self.registered_networks.append(network)
 
-     def register_nic(self, network):
-        self.registered_nics.append(network)
+     def register_nic(self, nic):
+        self.registered_nics.append(nic)
 
      def apply(self):
         self.slice = fablib.new_slice(name=self.name)
@@ -96,7 +98,7 @@ class Slice(Fabric_Base):
         for network in self.registered_networks: network.apply()
         for nic in self.registered_nics: nic.apply()
         time.sleep(self.delay)
-        self.submit()
+        self.slice.submit()
 
      def plan(self):
         self.show()
@@ -129,7 +131,7 @@ class Node(Fabric_Base):
           self.cores = kwargs.get("cores" , 20)
           self.ram   = kwargs.get("ram"   , 40)
           self.disk  =  kwargs.get("disk" , 100)
-          self.nics  = {}
+          self.nics  = []
           self.Slice.register_node(self)
 
      def apply(self):
@@ -137,8 +139,11 @@ class Node(Fabric_Base):
           self.node = slice.add_node(name=self.name, site=self.site)
           self.node.set_capacities(cores=self.cores, ram=self.ram, disk=self.disk)
           self.node.set_image(self.image)
-          #for nic in self.nics.keys():
-          #    nic.iface = self.node.add_component(nic.model, nic.name).get_interfaces()[0]
+          for index, nic  in  enumerate(self.nics):
+              nic.interface = self.node.add_component(nic.model, nic.name).get_interfaces()[index]
+
+     def register_nic(self, nic):
+          self.nics.append(nic)
 
      def plan(self):
           self.show()
@@ -161,18 +166,27 @@ class L2Network(Fabric_Base):
           self.network = None
           self.subnet = self.random_IPV6_subnet()
           if "subnet" in kwargs :  self.subnet = kwargs["subnet"]
+          self.nics = []
           self.Slice.register_network(self)
     
      def apply(self):
           import pdb ; pdb.set_trace()
           slice = self.Slice.slice
-          self.network = slice.add_l2network(name=self.name)          
+          interfaces = [n.interface for n in self.nics]
+          self.network = slice.add_l2network(name=self.name, interfaces=interfaces)          
 
      def random_IPV6_subnet(self):
           import random
           x =  [int(random.random()*9999) for i in range(3)]
           x = "{}:{}:{}/64".format(*x)
           return x
+
+     def register_nic(self, nic):
+          self.nics.append(nic)
+
+          
+     def attach_interface(self, interface):
+          self.interfaces.append(interface)
      
      def plan(self):
         self.show()
@@ -192,17 +206,23 @@ class Nic(Fabric_Base):
      - model -- NIC model (def NIC_Basic))
      """
      def __init__ (self, slice,  name,  node, network, **kwargs):
-          self.name    = name
-          self.node    = node
-          self.network = network
-          self.model   = kwargs.get("model", "NIC_Basic")
+          self.name      = name  # name of NIC
+          self.node      = node
+          self.network   = network
+          self.model     = kwargs.get("model", "NIC_Basic")
+          self.interface = None  #known after apply. 
           slice.register_nic(self)
-
-
+          self.node.register_nic(self)
+          self.network.register_nic(self)
+          
      def plan(self):
           self.show()
 
      def apply(self):
+          # ask the node to make the nic and return an interface.
+          # Tell the the network about the interface.
+                    
+          #tell the network 
           pass
 
 
