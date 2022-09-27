@@ -170,7 +170,6 @@ class L2Network(Fabric_Base):
           self.Slice.register_network(self)
     
      def apply(self):
-          import pdb ; pdb.set_trace()
           slice = self.Slice.slice
           interfaces = [n.interface for n in self.nics]
           self.network = slice.add_l2network(name=self.name, interfaces=interfaces)          

@@ -30,5 +30,4 @@ fo.Nic(slice, "Node2.NIC1", node2, net1)
 
 def plan(): slice.plan()
 def apply():
-    import pdb; pdb.set_trace()
     slice.apply()
