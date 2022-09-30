@@ -1,6 +1,5 @@
 """
-
-A collection of objects that provies resources in FABRIC for
+A collection of objects that provides resources in FABRIC for
 CMB-S4 Phase one.
 
 In fabric, a unit of provisioning is a *slice*.  For CMB-S4 a slice is
@@ -80,6 +79,7 @@ class Slice(Fabric_Base):
         self.registered_nodes    = []
         self.registered_networks = []
         self.registered_nics     = []
+        self.registered_cmds     = []
         self.delay = 4
         if "delay"  in kwargs :  self.delay  = kwargs["delay"]
         
@@ -92,19 +92,25 @@ class Slice(Fabric_Base):
      def register_nic(self, nic):
         self.registered_nics.append(nic)
 
+     def register_cmds(self,cmds):
+        self.registered_cmds.append(cmds)
+        
      def apply(self):
         self.slice = fablib.new_slice(name=self.name)
-        for node in self.registered_nodes: node.apply()
+        for node    in self.registered_nodes:    node.apply()
         for network in self.registered_networks: network.apply()
-        for nic in self.registered_nics: nic.apply()
+        for nic     in self.registered_nics:     nic.apply()
         time.sleep(self.delay)
         self.slice.submit()
+        for cmd     in self.registered_cmds:     cmd.apply() 
+
 
      def plan(self):
         self.show()
         for node in self.registered_nodes:       node.plan()
         for network in self.registered_networks: network.plan()
         for nic     in self.registered_nics:     nic.plan() 
+        for cmd     in self.registered_cmds:     cmd.plan() 
 
 
 class Node(Fabric_Base):
@@ -164,6 +170,7 @@ class L2Network(Fabric_Base):
           self.Slice = slice  #Slice wrapper object 
           self.name = name
           self.network = None
+          self.subnet = None
           self.subnet = self.random_IPV6_subnet()
           if "subnet" in kwargs :  self.subnet = kwargs["subnet"]
           self.nics = []
@@ -172,7 +179,13 @@ class L2Network(Fabric_Base):
      def apply(self):
           slice = self.Slice.slice
           interfaces = [n.interface for n in self.nics]
-          self.network = slice.add_l2network(name=self.name, interfaces=interfaces)          
+          self.network = slice.add_l2network(name=self.name, interfaces=interfaces)
+          fabric_subnet_object  = IPV6Network(self.self.subnet_addresses)
+          available_ips = fabric_subnet_object.hosts()
+          for nic in self.nics:
+               IV6_addr = next(available_ips)
+               nic.interface.ip_addr_add(addr=node2_addr, subnet=fabric_subnet_object)
+               nic.interface.set_ip(ip=IV6_addr, mtu=nic.mtu) 
 
      def random_IPV6_subnet(self):
           import random
@@ -203,28 +216,57 @@ class Nic(Fabric_Base):
 
      Kwargs:
      - model -- NIC model (def NIC_Basic))
+       mtu   -- max packet dise (def = 1500)
      """
      def __init__ (self, slice,  name,  node, network, **kwargs):
           self.name      = name  # name of NIC
           self.node      = node
           self.network   = network
           self.model     = kwargs.get("model", "NIC_Basic")
-          self.interface = None  #known after apply. 
-          slice.register_nic(self)
-          self.node.register_nic(self)
-          self.network.register_nic(self)
+          self.interface = None  #known after apply.
+          self.mtu       = kwargs.get("mtu", "1500")
+          self.node.register_nic(self)      #tell the node about the NIC
+          self.network.register_nic(self)   #Tell   the net about the  NIC
+          slice.register_nic(self)          # tell out slic about the NIC
           
      def plan(self):
           self.show()
 
      def apply(self):
-          # ask the node to make the nic and return an interface.
-          # Tell the the network about the interface.
-                    
-          #tell the network 
+          # no actions here as this is just encapusulated info to share
+          # NODES and Networks use this info in their apply() steps
           pass
 
 
+class Cmds(Fabric_Base):
+     """
+     Commands to send to a node as root.
 
+     slice  - slice object owning the node.
+     name   - Memonic name for this code (Need not be unique)
+     node   - node object to executre command on
+     cmds   - command text to execute, multiple lines allowed)
+              n.b open("cmds,txt","r").read() is an idiom....
+              ... to read commands from a file.
+     
+     kwargs :
+           none (yet)
+     """
 
+     def __init__ (self, slice, name, node, cmds, **kwargs):
+          self.slice = slice
+          self.name   = name
+          self.node   = node
+          self.cmds   = cmds
+          self.stdout = None
+          self.stderr = None
+          slice.register_cmds(self) # tell out slic about the commands
+
+     def plan(self):
+          self.show()
+
+     def apply(self):
+          node = self.node.node
+          (self.stdout, self.stderr) = node.execute(cmds)
+          print (self.stdout)
 
