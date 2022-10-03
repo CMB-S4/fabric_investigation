@@ -1,6 +1,6 @@
 """
 A collection of objects that provides resources in FABRIC for
-CMB-S4 Phase one.
+C-S4 Phase one.
 
 In fabric, a unit of provisioning is a *slice*.  For CMB-S4 a slice is
 a collection of nodes and networks.  Nodes contain interfaces that are
@@ -37,7 +37,13 @@ slice down.
 
 from fabrictestbed.slice_manager import SliceManager, Status, SliceState
 from fabrictestbed_extensions.fablib.fablib import fablib
+from ipaddress import ip_address, IPv4Address, IPv6Address, IPv4Network, IPv6Network
 import time
+import logging
+
+from fabrictestbed_extensions.fablib.fablib import FablibManager as fablib_manager
+fablib = fablib_manager()             
+fablib.show_config()
 
 class Fabric_Base:
      """
@@ -96,12 +102,15 @@ class Slice(Fabric_Base):
         self.registered_cmds.append(cmds)
         
      def apply(self):
+        logging.info(f"creating Slice {self.name}")       
         self.slice = fablib.new_slice(name=self.name)
         for node    in self.registered_nodes:    node.apply()
         for network in self.registered_networks: network.apply()
         for nic     in self.registered_nics:     nic.apply()
         time.sleep(self.delay)
+        logging.info(f"submitting Slice {self.name}")       
         self.slice.submit()
+        logging.info(f"submitted Slice {self.name}")       
         for cmd     in self.registered_cmds:     cmd.apply() 
 
 
@@ -141,12 +150,14 @@ class Node(Fabric_Base):
           self.Slice.register_node(self)
 
      def apply(self):
+          logging.info(f"creating node {self.name}")
           slice = self.Slice.slice
           self.node = slice.add_node(name=self.name, site=self.site)
           self.node.set_capacities(cores=self.cores, ram=self.ram, disk=self.disk)
           self.node.set_image(self.image)
           for index, nic  in  enumerate(self.nics):
               nic.interface = self.node.add_component(nic.model, nic.name).get_interfaces()[index]
+          print(f"{self.name:},{self.node}")
 
      def register_nic(self, nic):
           self.nics.append(nic)
@@ -154,7 +165,34 @@ class Node(Fabric_Base):
      def plan(self):
           self.show()
 
+class L3Network(Fabric_Base):
 
+     def __init__(self, slice, name, **kwargs):
+          
+          self.Slice = slice  #Slice wrapper object 
+          self.name = name
+          self.network = None
+          self.nics = []
+          self.subnet = None
+          self.gateway = None
+          self.Slice.register_network(self)
+
+     def apply(self):
+          logging.info(f"creating L3 network {self.name}")
+          slice = self.Slice.slice
+          interfaces = [nic.interface for nic in self.nics]
+          self.network = slice.add_l3network(name=self.name, interfaces=interfaces, type='IPv4')
+          self.gateway = self.network.get_gateway()
+          self.subnet  = self.network.get_subnet()
+          print(f"{self.name:},{self.network}")
+          
+     def register_nic(self, nic):
+          self.nics.append(nic)
+          
+     def plan(self):
+          self.show()
+     
+          
 class L2Network(Fabric_Base):
      """
      Create a L2  Network, with an IPV6 address space
@@ -177,20 +215,21 @@ class L2Network(Fabric_Base):
           self.Slice.register_network(self)
     
      def apply(self):
+          logging.info(f"creating L2 network {self.name}")
           slice = self.Slice.slice
           interfaces = [n.interface for n in self.nics]
           self.network = slice.add_l2network(name=self.name, interfaces=interfaces)
-          fabric_subnet_object  = IPV6Network(self.self.subnet_addresses)
+          fabric_subnet_object  = IPv6Network(self.subnet)
           available_ips = fabric_subnet_object.hosts()
           for nic in self.nics:
-               IV6_addr = next(available_ips)
-               nic.interface.ip_addr_add(addr=node2_addr, subnet=fabric_subnet_object)
-               nic.interface.set_ip(ip=IV6_addr, mtu=nic.mtu) 
+               IpV6_addr = next(available_ips)
+               nic.interface.ip_addr_add(addr=IpV6_addr, subnet=fabric_subnet_object)
+               nic.interface.set_ip(ip= IpV6_addr, mtu=nic.mtu) 
 
      def random_IPV6_subnet(self):
           import random
-          x =  [int(random.random()*9999) for i in range(3)]
-          x = "{}:{}:{}/64".format(*x)
+          x =  [int(random.random()*9999) for i in range(2)]
+          x = "{}:{}::/64".format(*x)
           return x
 
      def register_nic(self, nic):
@@ -207,8 +246,7 @@ class L2Network(Fabric_Base):
 
 class Nic(Fabric_Base):
      """
-     Bind a  Network interface card to a node and a netwwork
-
+     Bind a  Network interface card to a node and a L2 or L3  netwwork
      slice   - slice object owningn th NIC
      name    - unique human-readable name of NIC
      node    - node object NIC is associated with
@@ -227,7 +265,7 @@ class Nic(Fabric_Base):
           self.mtu       = kwargs.get("mtu", "1500")
           self.node.register_nic(self)      #tell the node about the NIC
           self.network.register_nic(self)   #Tell   the net about the  NIC
-          slice.register_nic(self)          # tell out slic about the NIC
+          slice.register_nic(self)          # tell our slic about the NIC
           
      def plan(self):
           self.show()
@@ -267,6 +305,6 @@ class Cmds(Fabric_Base):
 
      def apply(self):
           node = self.node.node
-          (self.stdout, self.stderr) = node.execute(cmds)
+          (self.stdout, self.stderr) = node.execute(self.cmds)
           print (self.stdout)
 

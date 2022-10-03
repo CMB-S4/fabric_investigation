@@ -27,6 +27,12 @@ def apply(args):
      exec ("import {}".format(args.configuration))
      exec ("{}.apply()".format(args.configuration))
 
+def delete(args):
+     from fabrictestbed_extensions.fablib.fablib import fablib
+     slice = fablib.get_slice(name=args.slice_name)
+     logging.info(f"about to delete slica named {args.slice_name}")
+     slice.delete()
+
 
 def template(args):
      pass
@@ -46,7 +52,7 @@ if __name__ == "__main__":
      subparsers = parser.add_subparsers()   
  
      #list but not execute. 
-     subparser = subparsers.add_parser('plan', help=list.__doc__)
+     subparser = subparsers.add_parser('plan', help=plan.__doc__)
      subparser.set_defaults(func=plan)
      subparser.add_argument("configuration", help = "configuration file")
 
@@ -54,6 +60,11 @@ if __name__ == "__main__":
      subparser = subparsers.add_parser('apply', help=apply.__doc__)
      subparser.set_defaults(func=apply)
      subparser.add_argument("configuration", help = "configuration file")
+
+     #instanitate
+     subparser = subparsers.add_parser('delete', help=delete.__doc__)
+     subparser.set_defaults(func=delete)
+     subparser.add_argument("slice_name", help = "slice_name")
 
      args = parser.parse_args()
 
