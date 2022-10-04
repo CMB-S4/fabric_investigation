@@ -1,7 +1,7 @@
 # Leave this statement impports the
 # objects that represent FABRIC resources. 
-import fabric_objects as fo
-
+from  fabric_objects import *
+import os
 
 # default quantities for our nodes.
 image = 'default_rocky_8'
@@ -14,11 +14,12 @@ disk = 100
 # Simple setup to gebug why nodes don't work
 # at least on DOn's mac
 #
-slice = fo.Slice('MySlice-DLP')
+slice = CfSlice(os.path.basename(__file__)[:-3])
 
-node1 = fo.Node(slice, 'CMBS4Node_ncsa1', image,
-                disk=disk, cores=cores, ram=ram, site='NCSA')
-fo.Cmds(slice, "Standard Install", node1, "hostname")
+node1 = CfNode(slice, 'CMBS4Node_ncsa1', image,
+                disk=disk, cores=cores, ram=ram,
+               site='NCSA')
+#Cmds(slice, "Standard Install", node1, "hostname")
 
 #
 #  Leave these function calls in place

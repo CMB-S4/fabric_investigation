@@ -1,3 +1,4 @@
+
 """
 A collection of objects that provides resources in FABRIC for
 C-S4 Phase one.
@@ -45,7 +46,7 @@ from fabrictestbed_extensions.fablib.fablib import FablibManager as fablib_manag
 fablib = fablib_manager()             
 fablib.show_config()
 
-class Fabric_Base:
+class CfFabric_Base:
      """
      a base clase for all objects in config file
      """
@@ -65,7 +66,8 @@ class Fabric_Base:
                else:
                     print("\t{} {}".format(key, value))
 
-class Slice(Fabric_Base):
+     
+class CfSlice(CfFabric_Base):
      """
      Collect the nodes and networks for a slice.
 
@@ -82,45 +84,54 @@ class Slice(Fabric_Base):
      # then 
      def __init__(self, name, **kwargs):
           self.name = name
-          self.registered_nodes    = []
-          self.registered_networks = []
-          self.registered_nics     = []
-          self.registered_cmds     = []
+          self.registered_cfnodes    = []
+          self.registered_cfnetworks = []
+          self.registered_cfnics     = []
+          self.registered_cfcmds     = []
           self.delay = 4
           if "delay"  in kwargs :  self.delay  = kwargs["delay"]
         
-     def register_node(self, node):
-          self.registered_nodes.append(node)
+     def register_cfnode(self, cfnode):
+          self.registered_cfnodes.append(cfnode)
         
-     def register_network(self, network):
-          self.registered_networks.append(network)
+     def register_cfnetwork(self, cfnetwork):
+          self.registered_cfnetworks.append(cfnetwork)
 
-     def register_nic(self, nic):
-          self.registered_nics.append(nic)
+     def register_cfnic(self, cfnic):
+          self.registered_cfnics.append(cfnic)
 
-     def register_cmds(self,cmds):
-          self.registered_cmds.append(cmds)
+     def register_cfcmds(self,cfcmds):
+          self.registered_cfcmds.append(cfcmds)
         
      def apply(self):
-          logging.info(f"creating Slice {self.name}")       
+          logging.info(f"instatiate clice {self.name}")       
           self.slice = fablib.new_slice(name=self.name)
-          for node    in self.registered_nodes:    node.apply()
-          for network in self.registered_networks: network.apply()
-          for nic     in self.registered_nics:     nic.apply()
+          for cfnode    in self.registered_cfnodes:    cfnode.apply()
+          for cfnetwork in self.registered_cfnetworks: cfnetwork.apply()
+          for cfnic     in self.registered_cfnics:     cfnic.apply()
           time.sleep(self.delay)
+          t0 = time.time()
+          logging.info(f"submitting slice {self.name}")
           self.slice.submit()
-          logging.info(f"submitted Slice {self.name}")       
-          for cmd     in self.registered_cmds:     cmd.apply()
+          duration = time.time() - t0
+          logging.info(f"submit complete in {duration} seconds")
+          import pdb; pdb.set_trace()
+          #reak by using the same  name.
+          logging.info(f"begin post submit for {len(self.registered_cfnetworks)} networks")
+          for cfnetwork in self.registered_cfnetworks: cfnetwork.post_submit()
+          logging.info(f"begin post submit for {len(self.registered_cfnodes)} nodes")
+          for cfnode in self.registered_cfnodess: cfnode.post_submit()
+          for cfcmd     in self.registered_cfcmds:     cfcmd.apply()
 
      def plan(self):
           self.show()
-          for node in self.registered_nodes:       node.plan()
-          for network in self.registered_networks: network.plan()
-          for nic     in self.registered_nics:     nic.plan() 
-          for cmd     in self.registered_cmds:     cmd.plan()
+          for cfnode in self.registered_cfnodes:       cfnode.plan()
+          for cfnetwork in self.registered_cfnetworks: cfnetwork.plan()
+          for cfnic     in self.registered_cfnics:     cfnic.plan() 
+          for cfcmd     in self.registered_cfcmds:     cfcmd.plan()
 
 
-class Node(Fabric_Base):
+class CfNode(CfFabric_Base):
      """
      Create a Node, and specify non-network resources for the node.
 
@@ -136,8 +147,8 @@ class Node(Fabric_Base):
 
  
      """
-     def __init__ (self, slice, name, image, **kwargs):
-          self.Slice = slice  #Slice wrapper object 
+     def __init__ (self, cfslice, name, image, **kwargs):
+          self.cfslice = cfslice  #Slice wrapper object 
           self.name  = name
           self.node  = None
           self.image = image
@@ -145,51 +156,85 @@ class Node(Fabric_Base):
           self.cores = kwargs.get("cores" , 20)
           self.ram   = kwargs.get("ram"   , 40)
           self.disk  =  kwargs.get("disk" , 100)
-          self.nics  = []
-          self.Slice.register_node(self)
+          self.cfnics  = []
+          self.cfslice.register_cfnode(self)
 
      def apply(self):
           logging.info(f"creating node {self.name}")
-          slice = self.Slice.slice
+          slice = self.cfslice.slice
           self.node = slice.add_node(name=self.name, site=self.site)
           self.node.set_capacities(cores=self.cores, ram=self.ram, disk=self.disk)
           self.node.set_image(self.image)
-          for index, nic  in  enumerate(self.nics):
-              nic.interface = self.node.add_component(nic.model, nic.name).get_interfaces()[index]
+          for index, cfnic  in  enumerate(self.cfnics):
+               #import pdb; pdb.set_trace()
+               cfnic.interface = self.node.add_component(model=cfnic.model, name=cfnic.name).get_interfaces()[index]
 
-     def register_nic(self, nic):
-          self.nics.append(nic)
+     def post_submit(self):
+          import pdb; pdb.set_trace()
+          for cfnic in self.cfnics:
+               #nodes
+               self.dev = cfnic.interface.get_os_interface()
+               self.ip  = cfnic.network.get_available_ips()[0]
+               cfnic.interface.ip_addr_add(addr=self.ip, subnet=cfnic.network.subnet)
+               
+     def register_cfnic(self, nic):
+          self.cfnics.append(nic)
 
      def plan(self):
           self.show()
 
-class L3Network(Fabric_Base):
 
-     def __init__(self, slice, name, **kwargs):
+class CfRouteAll(CfFabric_Base):
+     # 1) for all L3 interfaces -- assign gateway and subnet to its ...
+     # ... associated network using its post_submit method. 
+     # 2)  for every node, establish "os interface" and assign an IP ...
+     # ... address. using its post_submit method.
+     # 3) using the of all nodes in the slice, for every pair of nodes ..
+     # .... (on different nets?) establish mutual routes to each other
+
+     def apply(self):
+          pass
+               
+
+               
+class CfL3Network(CfFabric_Base):
+
+     def __init__(self, cfslice, name, **kwargs):
           
-          self.Slice = slice  #Slice wrapper object 
+          self.cfslice = cfslice  #Slice wrapper object 
           self.name = name
           self.network = None
-          self.nics = []
+          self.cfnics = []
           self.subnet = None
           self.gateway = None
-          self.Slice.register_network(self)
+          self.cfslice.register_cfnetwork(self)
 
      def apply(self):
           logging.info(f"creating L3 network {self.name}")
           import pdb; pdb.set_trace()
-          slice = self.Slice.slice
-          interfaces = [nic.interface for nic in self.nics]
+          slice = self.cfslice.slice
+          interfaces = [cfnic.interface for cfnic in self.cfnics]
           self.network = slice.add_l3network(name=self.name, interfaces=interfaces, type='IPv4')
+
           
-     def register_nic(self, nic):
-          self.nics.append(nic)
+     def register_cfnic(self, nic):
+          self.cfnics.append(nic)
+
+     def post_submit(self):
+          #netowrk
+          import pdb; pdb.set_trace()
+          self.network = slice.get_network(name=self.name)
+          network   = [cfnic.cfnetwork.network for cfnic in self.cfnics]
+          for interface in interfaces:
+               self.subnet  = network.get_subnet()
+               self.gateway = network.get_gateway()
+
           
      def plan(self):
           self.show()
-     
-          
-class L2Network(Fabric_Base):
+
+
+class CfL2Network(CfFabric_Base):
      """
      Create a L2  Network, with an IPV6 address space
       
@@ -201,26 +246,26 @@ class L2Network(Fabric_Base):
      
      """
      def __init__(self, slice, name,  **kwargs):
-          self.Slice = slice  #Slice wrapper object 
+          self.cfslice = slice  #Slice wrapper object 
           self.name = name
           self.network = None
           self.subnet = None
           self.subnet = self.random_IPV6_subnet()
           if "subnet" in kwargs :  self.subnet = kwargs["subnet"]
-          self.nics = []
-          self.Slice.register_network(self)
+          self.cfnics = []
+          self.cfslice.register_cfnetwork(self)
     
      def apply(self):
           logging.info(f"creating L2 network {self.name}")
-          slice = self.Slice.slice
+          slice = self.cfslice.slice
           interfaces = [n.interface for n in self.nics]
           self.network = slice.add_l2network(name=self.name, interfaces=interfaces)
           fabric_subnet_object  = IPv6Network(self.subnet)
           available_ips = fabric_subnet_object.hosts()
-          for nic in self.nics:
+          for cfnic in self.cfnics:
                IpV6_addr = next(available_ips)
-               nic.interface.ip_addr_add(addr=IpV6_addr, subnet=fabric_subnet_object)
-               nic.interface.set_ip(ip= IpV6_addr, mtu=nic.mtu) 
+               cfnic.interface.ip_addr_add(addr=IpV6_addr, subnet=fabric_subnet_object)
+               cfnic.interface.set_ip(ip= IpV6_addr, mtu=nic.mtu) 
 
      def random_IPV6_subnet(self):
           import random
@@ -228,10 +273,9 @@ class L2Network(Fabric_Base):
           x = "{}:{}::/64".format(*x)
           return x
 
-     def register_nic(self, nic):
-          self.nics.append(nic)
+     def register_cfnic(self, nic):
+          self.cfnics.append(nic)
 
-          
      def attach_interface(self, interface):
           self.interfaces.append(interface)
      
@@ -240,28 +284,29 @@ class L2Network(Fabric_Base):
           
 
 
-class Nic(Fabric_Base):
+class CfNic(CfFabric_Base):
      """
      Bind a  Network interface card to a node and a L2 or L3  netwwork
-     slice   - slice object owningn th NIC
+     cfslice   - slice object owningn th NIC
      name    - unique human-readable name of NIC
-     node    - node object NIC is associated with
-     network - network object NIC is associated with 
+     cfnode    - node object NIC is associated with
+     cfnetwork - network object NIC is associated with 
 
      Kwargs:
      - model -- NIC model (def NIC_Basic))
        mtu   -- max packet dise (def = 1500)
      """
-     def __init__ (self, slice,  name,  node, network, **kwargs):
+     def __init__ (self, cfslice,  name,  cfnode, cfnetwork, **kwargs):
           self.name      = name  # name of NIC
-          self.node      = node
-          self.network   = network
+          self.cfslice   = cfslice
+          self.cfnode    = cfnode
+          self.cfnetwork = cfnetwork
           self.model     = kwargs.get("model", "NIC_Basic")
           self.interface = None  #known after apply.
           self.mtu       = kwargs.get("mtu", "1500")
-          self.node.register_nic(self)      #tell the node about the NIC
-          self.network.register_nic(self)   #Tell   the net about the  NIC
-          slice.register_nic(self)          # tell our slic about the NIC
+          self.cfnode.register_cfnic(self)      #tell the cfnode about the NIC
+          self.cfnetwork.register_cfnic(self)   #Tell   the cfnet about the  NIC
+          cfslice.register_cfnic(self)            # tell our cfslice about the NIC
           
      def plan(self):
           self.show()
@@ -272,7 +317,7 @@ class Nic(Fabric_Base):
           pass
 
 
-class Cmds(Fabric_Base):
+class CfCmds(CfFabric_Base):
      """
      Commands to send to a node as root.
 
@@ -287,21 +332,21 @@ class Cmds(Fabric_Base):
            none (yet)
      """
 
-     def __init__ (self, slice, name, node, cmds, **kwargs):
+     def __init__ (self, slice, cfname, cfnode, cmds, **kwargs):
           self.slice = slice
-          self.name   = name
-          self.node   = node
-          self.cmds   = cmds
+          self.cfname   = name
+          self.cf.node   = node
+          self.cfcmds   = cmds
           self.stdout = None
           self.stderr = None
-          slice.register_cmds(self) # tell out slic about the commands
+          slice.register_cfcmds(self) # tell out slic about the commands
 
      def plan(self):
           self.show()
 
      def apply(self):
           import pdb; pdb.set_trace()
-          node = self.node.node
+          node = self.cfnode.node
           (self.stdout, self.stderr) = node.execute(self.cmds)
 
 
