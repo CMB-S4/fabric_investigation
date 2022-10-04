@@ -9,7 +9,7 @@ usually on multiple networks. a "NIC" object describes the means a
 node uses to connect to a network and the network to connect to.
 
 A file of python object declaration is the configuration file. in The
-configjuraion fike the user specifies a slice, and anhy number of
+configuration file the user specifies a slice, and any number of
 network node and nic  objects. The configuration file processing program ,
 *Planner.py* will import and cause the objects to be instantated and
 run at the  "plan" or "apply" Level.
@@ -81,45 +81,43 @@ class Slice(Fabric_Base):
      """
      # then 
      def __init__(self, name, **kwargs):
-        self.name = name
-        self.registered_nodes    = []
-        self.registered_networks = []
-        self.registered_nics     = []
-        self.registered_cmds     = []
-        self.delay = 4
-        if "delay"  in kwargs :  self.delay  = kwargs["delay"]
+          self.name = name
+          self.registered_nodes    = []
+          self.registered_networks = []
+          self.registered_nics     = []
+          self.registered_cmds     = []
+          self.delay = 4
+          if "delay"  in kwargs :  self.delay  = kwargs["delay"]
         
      def register_node(self, node):
-        self.registered_nodes.append(node)
+          self.registered_nodes.append(node)
         
      def register_network(self, network):
-        self.registered_networks.append(network)
+          self.registered_networks.append(network)
 
      def register_nic(self, nic):
-        self.registered_nics.append(nic)
+          self.registered_nics.append(nic)
 
      def register_cmds(self,cmds):
-        self.registered_cmds.append(cmds)
+          self.registered_cmds.append(cmds)
         
      def apply(self):
-        logging.info(f"creating Slice {self.name}")       
-        self.slice = fablib.new_slice(name=self.name)
-        for node    in self.registered_nodes:    node.apply()
-        for network in self.registered_networks: network.apply()
-        for nic     in self.registered_nics:     nic.apply()
-        time.sleep(self.delay)
-        logging.info(f"submitting Slice {self.name}")       
-        self.slice.submit()
-        logging.info(f"submitted Slice {self.name}")       
-        for cmd     in self.registered_cmds:     cmd.apply() 
-
+          logging.info(f"creating Slice {self.name}")       
+          self.slice = fablib.new_slice(name=self.name)
+          for node    in self.registered_nodes:    node.apply()
+          for network in self.registered_networks: network.apply()
+          for nic     in self.registered_nics:     nic.apply()
+          time.sleep(self.delay)
+          self.slice.submit()
+          logging.info(f"submitted Slice {self.name}")       
+          for cmd     in self.registered_cmds:     cmd.apply()
 
      def plan(self):
-        self.show()
-        for node in self.registered_nodes:       node.plan()
-        for network in self.registered_networks: network.plan()
-        for nic     in self.registered_nics:     nic.plan() 
-        for cmd     in self.registered_cmds:     cmd.plan() 
+          self.show()
+          for node in self.registered_nodes:       node.plan()
+          for network in self.registered_networks: network.plan()
+          for nic     in self.registered_nics:     nic.plan() 
+          for cmd     in self.registered_cmds:     cmd.plan()
 
 
 class Node(Fabric_Base):
@@ -141,6 +139,7 @@ class Node(Fabric_Base):
      def __init__ (self, slice, name, image, **kwargs):
           self.Slice = slice  #Slice wrapper object 
           self.name  = name
+          self.node  = None
           self.image = image
           self.site  = kwargs.get("site"  , "NCSA")
           self.cores = kwargs.get("cores" , 20)
@@ -157,7 +156,6 @@ class Node(Fabric_Base):
           self.node.set_image(self.image)
           for index, nic  in  enumerate(self.nics):
               nic.interface = self.node.add_component(nic.model, nic.name).get_interfaces()[index]
-          print(f"{self.name:},{self.node}")
 
      def register_nic(self, nic):
           self.nics.append(nic)
@@ -179,12 +177,10 @@ class L3Network(Fabric_Base):
 
      def apply(self):
           logging.info(f"creating L3 network {self.name}")
+          import pdb; pdb.set_trace()
           slice = self.Slice.slice
           interfaces = [nic.interface for nic in self.nics]
           self.network = slice.add_l3network(name=self.name, interfaces=interfaces, type='IPv4')
-          self.gateway = self.network.get_gateway()
-          self.subnet  = self.network.get_subnet()
-          print(f"{self.name:},{self.network}")
           
      def register_nic(self, nic):
           self.nics.append(nic)
@@ -304,7 +300,8 @@ class Cmds(Fabric_Base):
           self.show()
 
      def apply(self):
+          import pdb; pdb.set_trace()
           node = self.node.node
           (self.stdout, self.stderr) = node.execute(self.cmds)
-          print (self.stdout)
+
 
