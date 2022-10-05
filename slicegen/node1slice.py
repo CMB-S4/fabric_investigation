@@ -19,7 +19,7 @@ slice = CfSlice(os.path.basename(__file__)[:-3])
 node1 = CfNode(slice, 'CMBS4Node_ncsa1', image,
                 disk=disk, cores=cores, ram=ram,
                site='NCSA')
-#Cmds(slice, "Standard Install", node1, "hostname")
+CfCmds(slice, "example command", node1, "hostname")
 
 #
 #  Leave these function calls in place
