@@ -113,6 +113,12 @@ def debug(args):
      slice = fablib.get_slice(name=slice_name)
      import pdb; pdb.set_trace()
 
+def slices(args):
+     "print the name of all my slices"
+     from fabrictestbed_extensions.fablib.fablib import fablib
+     for slice in fablib.get_slices():
+          print (slice.get_name())
+
 if __name__ == "__main__":
 
     #main_parser = argparse.ArgumentParser(add_help=False)
@@ -157,10 +163,16 @@ if __name__ == "__main__":
      subparser.set_defaults(func=cross_route)
      subparser.add_argument("slice_name", help = "slice_name")
 
-     #cross_route
+     #debug
      subparser = subparsers.add_parser('debug', help=debug.__doc__)
      subparser.set_defaults(func=debug)
      subparser.add_argument("slice_name", help = "slice_name")
+
+     #slices
+     subparser = subparsers.add_parser('slices', help=slices.__doc__)
+     subparser.set_defaults(func=slices)
+
+     
 
      args = parser.parse_args()
 
