@@ -34,7 +34,8 @@ the demonstraton is done, the only action supported is to tear the
 slice down.
 
 """
-# https://github.com/fabric-testbed/jupyter-examples/blob/master/fabric_examples/public_demos/KNIT5/KNIT5_Creating_FABnet_Networks/KNIT5_Tutorial_Creating_FABnet_Networks.ipynb 
+# https://github.com/fabric-testbed/jupyter-examples/blob/master/fabric_examples/public_demos/KNIT5/KNIT5_Creating_FABnet_Networks/KNIT5_Tutorial_Creating_FABnet_Networks.ipynb
+
 from fabrictestbed.slice_manager import SliceManager, Status, SliceState
 from fabrictestbed_extensions.fablib.fablib import fablib
 from ipaddress import ip_address, IPv4Address, IPv6Address, IPv4Network, IPv6Network
@@ -182,8 +183,7 @@ class CfNode(CfFabric_Base):
           node.set_image(self.image)
           for index, cfnic  in  enumerate(self.cfnics):
                #import pdb; pdb.set_trace()
-               node.add_component(model=cfnic.model, name=cfnic.name).get_interfaces()[ CfNode.available_ip_index]
-               CfNode.available_ip_index += 1
+               node.add_component(model=cfnic.model, name=cfnic.name).get_interfaces()[index]
                cfnic.interface_index = index
 
      def configure(self):
@@ -191,7 +191,7 @@ class CfNode(CfFabric_Base):
                #nodes
                interface = cfnic.get_interface()
                self.dev = interface.get_os_interface()
-               self.ip  = cfnic.get_network().get_available_ips()[0]
+               self.ip  = cfnic.get_network().get_next_available_ip()
                interface.ip_addr_add(addr=self.ip, subnet=cfnic.get_network().get_subnet())
                
      def register_cfnic(self, nic):
@@ -203,6 +203,8 @@ class CfNode(CfFabric_Base):
                
 class CfL3Network(CfFabric_Base):
 
+     available_ips = []
+     
      def __init__(self, cfslice, name, **kwargs):
           
           self.cfslice = cfslice  #Slice wrapper object 
@@ -215,11 +217,9 @@ class CfL3Network(CfFabric_Base):
      def declare(self):
           logging.info(f"creating L3 network {self.name}")
           slice = self.cfslice.slice
-          ###  conver to inteface numebrs
-          
           interfaces = [cfnic.get_interface() for cfnic in self.cfnics]
-          self.network = slice.add_l3network(name=self.name, interfaces=interfaces, type='IPv4')
-
+          network = slice.add_l3network(name=self.name, interfaces=interfaces, type='IPv4')
+          
      def get_network(self):
           return self.cfslice.slice.get_network(self.name)
           
@@ -230,8 +230,14 @@ class CfL3Network(CfFabric_Base):
           # Get our gateway. -- network
           slice = self.cfslice.slice
           network = slice.get_network(name=self.name)
-          self.subnet  = network.get_subnet()
-          self.gateway = network.get_gateway()
+          if not CfL3Network.available_ips:
+               CfL3Network.available_ips = network.get_available_ips()
+          self.subnet        = network.get_subnet()
+          self.gateway       = network.get_gateway()
+          self.available_ips = self.subnet.hosts()
+
+     def get_next_ip(self):
+          return next(CfL3Network.available_ips)
 
           
      def plan(self):
@@ -330,7 +336,25 @@ class CfNic(CfFabric_Base):
           # NODES and Networks use this info in their declare() steps
           pass
 
+def cross_route(niclist):
+     """
+     For every node, loop though all the networks and set..
+     route to the gateway on evey node on a differnt netowork.
+      """
 
+     #get a unique list of networks.
+     networks = [nic.get_network() for nic in networks]
+     networks = set(networks)
+     
+     for nic in niclist:
+          node =  nic.get_node()
+          this_network = nic.get_network()
+          for net in networks:
+               if net == this_network : continue
+               set_route (node, net)  # pesudocode.
+     
+     
+     
 class CfCmds(CfFabric_Base):
      """
      Commands to send to a node as root.
