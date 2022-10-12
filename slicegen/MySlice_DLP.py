@@ -11,10 +11,10 @@ disk = 100
 
 slice = CfSlice(__name__)
 
-node1 = CfNode(slice, 'CMBS4Node_ncsa1', image,
-                disk=disk, cores=cores, ram=ram, site='NCSA')
-node2 = CfNode(slice, 'CMBS4Node_ncsa2', image,
-                disk=disk, cores=cores, ram=ram, site='NCSA')
+node1 = CfNode(slice, 'CMBS4Node1', image,
+                disk=disk, cores=cores, ram=ram, site='TACC')
+node2 = CfNode(slice, 'CMBS4Node2', image,
+                disk=disk, cores=cores, ram=ram, site='TACC')
 
 net1 = CfL3Network(slice, 'net1')
 
@@ -22,8 +22,8 @@ CfNic(slice, "Node1.NIC1", node1, net1)
 CfNic(slice, "Node2.NIC1", node2, net1)
 
 
-CFCmds(slice, "Standard Install", node1, "hostname")
-CFCmds(slice, "Standard Install", node2, "hostname")
+#CFCmds(slice, "Standard Install", node1, "hostname")
+#CFCmds(slice, "Standard Install", node2, "hostname")
 
 #
 #  Leave these function calls in place

@@ -28,6 +28,7 @@ def print_help(args):
 #                
 def plan(args):
      "show plan, but do not call FABRIC APIs "
+     import pdb; pdb.set_trace()
      configuration = remove_py(args.configuration)
      exec ("import {}".format(configuration))
      exec ("{}.plan()".format(configuration))

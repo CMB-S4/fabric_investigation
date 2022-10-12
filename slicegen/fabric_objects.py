@@ -1,3 +1,4 @@
+#!/usr/local/bin/python
 """
 A collection of objects that provides resources in FABRIC for
 C-S4 Phase one.
@@ -120,6 +121,7 @@ class CfSlice(CfFabric_Base):
           time.sleep(self.delay)
           t0 = time.time()
           logging.info(f"submitting slice {self.name}")
+          import pdb;pdb.set_trace()
           self.slice.submit()
           duration = time.time() - t0
           logging.info(f"submit complete in {duration} seconds")
@@ -131,6 +133,7 @@ class CfSlice(CfFabric_Base):
           for cfnetwork in self.registered_cfnetworks: cfnetwork.configure()
           for cfnode in self.registered_cfnodes: cfnode.configure()
           for cfcmd     in self.registered_cfcmds:     cfcmd.configure()
+          self.declare()
 
      def plan(self):
           self.show()
@@ -138,6 +141,26 @@ class CfSlice(CfFabric_Base):
           for cfnetwork in self.registered_cfnetworks: cfnetwork.plan()
           for cfnic     in self.registered_cfnics:     cfnic.plan() 
           for cfcmd     in self.registered_cfcmds:     cfcmd.plan()
+
+     def declare(self):
+          """
+          For every node, loop though all the networks and set..
+          route to the gateway on evey node on a differnt netowork.
+          """
+
+          import pdb ; pdb.set_trace()
+          #get a unique list of L3 -- pseudocde have to finr right stuff in API.
+          networks = [nic.get_network() for nic in self.registered_cfnics]
+          for cfnic in self.registered_cfnics:
+               node =  cfnic.get_node()
+               this_network_cfid = cfnic.cfnetwork.get_cfid()
+               for other_cfnic in self.registered_cfnics:
+                    other_network_cfid = cfnic.cfnetwork.get_cfid()
+                    if this_network_cfid == other_network_cfid : continue
+                    gateway = other_network_cfid.get_network.get-gateway()
+                    node.set_route(node, gateway)  # pesudocode.
+     
+     
 
 
 class CfNode(CfFabric_Base):
@@ -157,7 +180,6 @@ class CfNode(CfFabric_Base):
  
  
      """
-     available_ip_index = 0
      
      def __init__ (self, cfslice, name, image, **kwargs):
           self.cfslice = cfslice  #Slice wrapper object 
@@ -186,12 +208,13 @@ class CfNode(CfFabric_Base):
                node.add_component(model=cfnic.model, name=cfnic.name).get_interfaces()[index]
                cfnic.interface_index = index
 
+
      def configure(self):
           for cfnic in self.cfnics:
                #nodes
                interface = cfnic.get_interface()
                self.dev = interface.get_os_interface()
-               self.ip  = cfnic.get_network().get_next_available_ip()
+               self.ip  = cfnic.cfnetwork.get_next_ip()
                interface.ip_addr_add(addr=self.ip, subnet=cfnic.get_network().get_subnet())
                
      def register_cfnic(self, nic):
@@ -203,7 +226,6 @@ class CfNode(CfFabric_Base):
                
 class CfL3Network(CfFabric_Base):
 
-     available_ips = []
      
      def __init__(self, cfslice, name, **kwargs):
           
@@ -213,6 +235,7 @@ class CfL3Network(CfFabric_Base):
           self.subnet = None
           self.gateway = None
           self.cfslice.register_cfnetwork(self)
+          self.available_ips  = []
 
      def declare(self):
           logging.info(f"creating L3 network {self.name}")
@@ -230,14 +253,17 @@ class CfL3Network(CfFabric_Base):
           # Get our gateway. -- network
           slice = self.cfslice.slice
           network = slice.get_network(name=self.name)
-          if not CfL3Network.available_ips:
-               CfL3Network.available_ips = network.get_available_ips()
-          self.subnet        = network.get_subnet()
-          self.gateway       = network.get_gateway()
-          self.available_ips = self.subnet.hosts()
-
+          self.subnet         = network.get_subnet()
+          self.gateway        = network.get_gateway()
+          for h in self.subnet.hosts() : self.available_ips.append(h)
+          pass
+     
      def get_next_ip(self):
-          return next(CfL3Network.available_ips)
+          return self.available_ips.pop(0)
+
+     def get_cfid(self):
+          network = self.get_network()
+          return f'{network.get_site()}.{network.get_layer()}.{network.get_name()}'
 
           
      def plan(self):
@@ -336,24 +362,6 @@ class CfNic(CfFabric_Base):
           # NODES and Networks use this info in their declare() steps
           pass
 
-def cross_route(niclist):
-     """
-     For every node, loop though all the networks and set..
-     route to the gateway on evey node on a differnt netowork.
-      """
-
-     #get a unique list of networks.
-     networks = [nic.get_network() for nic in networks]
-     networks = set(networks)
-     
-     for nic in niclist:
-          node =  nic.get_node()
-          this_network = nic.get_network()
-          for net in networks:
-               if net == this_network : continue
-               set_route (node, net)  # pesudocode.
-     
-     
      
 class CfCmds(CfFabric_Base):
      """
