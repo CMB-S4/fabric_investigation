@@ -8,6 +8,8 @@ Plan and provision resources in FABRIC.
 import argparse
 import logging
 from pprint import *
+from fabrictestbed_extensions.fablib.fablib import fablib
+
 #
 # Utilities
 #
@@ -25,7 +27,19 @@ def print_help(args):
      import sys
      args.parser.print_help(sys.stderr)
      exit(1)
-          
+
+def get_slice(args):
+     "get the slice whether by name or id"
+     if args.id:
+          slice = fablib.get_slice(slice_id=args.slice_name)
+     else:
+          name = remove_py(args.slice_name)
+          try:     
+               slice = fablib.get_slice(name)
+          except IndexError:
+               logging.error(f"slice {name} does not exist")
+               exit(1)
+     return slice
 #   
 #                
 def plan(args):
@@ -46,21 +60,14 @@ def apply(args):
 
 def delete(args):
      "delete a slice, if it exists"
-     from fabrictestbed_extensions.fablib.fablib import fablib
-     slice_name = remove_py(args.slice_name)
-     try:
-          slice = fablib.get_slice(name=slice_name)
-     except IndexError:
-          logging.error(f"slice {slice_name} does not exist")
-          exit(1)
-     logging.info(f"about to delete slica named {slice_name}")
+     slice = get_slice(args)
+     logging.info(f"about to delete slica named {args.slice_name}")
      slice.delete()
 
 def _print(args):
      "Print information about nodes and networks in a slice"
-     from fabrictestbed_extensions.fablib.fablib import fablib
      slice_name = remove_py(args.slice_name)
-     slice = fablib.get_slice(name=slice_name)
+     slice = get_slice(args)
      print (f"{slice}")
      for node in slice.get_nodes():
           print (f"{node}")
@@ -71,10 +78,9 @@ def _print(args):
 
 def _json(args):
      "emit json describing slice"
-     from fabrictestbed_extensions.fablib.fablib import fablib
      import json
-     slice_name = remove_py(args.slice_name)
-     slice = fablib.get_slice(name=slice_name)
+     slice = get_slice(args)
+     slice_name = slice.get_name()
      net_list  = [{'name' : n.get_name(), 'layer' : f"{n.get_layer()}", 'site' : n.get_site()}
                   for n in slice.get_networks()]
      slice_info = {'slice_name' : slice_name}
@@ -110,9 +116,7 @@ def mass_execute(args):
           if len(s) > 50 : s = f"{s[:25]}...{s[-25]:}"
           return s
      
-     from fabrictestbed_extensions.fablib.fablib import fablib
-     slice_name = remove_py(args.slice_name)
-     slice = fablib.get_slice(slice_name)
+     slice = get_slice(args)
      cmd = args.cmd
      if cmd[0] == "@" : cmd = open(cmd[1:],"r").read()
      abbreviated_cmd = shorten(cmd)
@@ -127,9 +131,7 @@ def mass_execute(args):
      
 def execute(args):
      "execute a command(s) on a specfic node"
-     from fabrictestbed_extensions.fablib.fablib import fablib
-     slice_name = remove_py(args.slice_name)
-     slice = fablib.get_slice(slice_name)
+     slice = get_slice(args)
      node  =slice.get_node(args.node_name)
      cmd = args.cmd
      if cmd[0] == "@" : cmd = open(cmd[1:],"r").read()
@@ -143,14 +145,11 @@ def template(args):
 
 def debug(args):
      "call a slice into memory and start the debugger"
-     from fabrictestbed_extensions.fablib.fablib import fablib
-     slice_name = remove_py(args.slice_name)
-     slice = fablib.get_slice(name=slice_name)
+     slice = get_slice(args)
      import pdb; pdb.set_trace()
 
 def slices(args):
      "print the name of all my slices"
-     from fabrictestbed_extensions.fablib.fablib import fablib
      for slice in fablib.get_slices():
           print (slice.get_name())
 
@@ -180,17 +179,20 @@ if __name__ == "__main__":
      #delete
      subparser = subparsers.add_parser('delete', help=delete.__doc__)
      subparser.set_defaults(func=delete)
+     subparser.add_argument("-i", "--id", help = "slice is an ID, not a name", action='store_true',  default=False)
      subparser.add_argument("slice_name", help = "slice_name")
 
      #print
      subparser = subparsers.add_parser('print', help=_print.__doc__)
      subparser.set_defaults(func=_print)
+     subparser.add_argument("-i", "--id", help = "slice is an ID, not a name", action='store_true',  default=False)
      subparser.add_argument("slice_name", help = "slice_name")
 
      #_json
      subparser = subparsers.add_parser('json', help=_json.__doc__)
      subparser.set_defaults(func=_json)
      subparser.add_argument("slice_name", help = "slice_name")
+     subparser.add_argument("-i", "--id", help = "slice is an ID, not a name", action='store_true',  default=False)
      parser.add_argument('--file','-f',
                              help='output file Def slice_name.json',
                              default="")
@@ -199,11 +201,13 @@ if __name__ == "__main__":
      subparser = subparsers.add_parser('mass_execute', help=mass_execute.__doc__)
      subparser.set_defaults(func=mass_execute)
      subparser.add_argument("slice_name", help = "slice_name")
+     subparser.add_argument("-i", "--id",  help = "slice is an ID, not a name", action='store_true',  default=False)
      subparser.add_argument("cmd", help = "command")
 
      #execute
      subparser = subparsers.add_parser('execute', help=execute.__doc__)
      subparser.set_defaults(func=execute)
+     subparser.add_argument("-i", "--id", help = "slice is an ID, not a name", action='store_true',  default=False)
      subparser.add_argument("slice_name", help = "slice_name")
      subparser.add_argument("node_name", help = "node_name")
      subparser.add_argument("cmd", help = "command")
@@ -212,7 +216,8 @@ if __name__ == "__main__":
      #debug
      subparser = subparsers.add_parser('debug', help=debug.__doc__)
      subparser.set_defaults(func=debug)
-     subparser.add_argument("slice_name", help = "slice_name")
+     subparser.add_argument("-i", "--id", help = "slice is an ID, not a name", action='store_true',  default=False)
+     subparser.add_argument("slice_name", help = "slice name or id")
 
      #slices
      subparser = subparsers.add_parser('slices', help=slices.__doc__)
