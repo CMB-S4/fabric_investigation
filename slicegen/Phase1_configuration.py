@@ -24,7 +24,7 @@ transient_archive_node   = CfNode(slice, 'TansArchive', image,
 
 observatory_net = CfL3Network(slice, 'observatory_net')
 compute_net     = CfL3Network(slice, 'compute_net')   
-archive_net     = CfL3Network(slice, 'compute_net')
+archive_net     = CfL3Network(slice, 'archive_net')
 
 CfNic(slice, "Observatory.NIC1" , observatory_node,            observatory_net)
 CfNic(slice, "MapMaker.NIC1"    , map_maker_node,              compute_net)
