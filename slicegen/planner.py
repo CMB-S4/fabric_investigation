@@ -151,7 +151,7 @@ def debug(args):
 def slices(args):
      "print the name of all my slices"
      for slice in fablib.get_slices():
-          print (slice.get_name())
+          print (slice.slice_id, slice.get_name())
 
 if __name__ == "__main__":
 
