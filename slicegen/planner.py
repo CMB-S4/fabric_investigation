@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 """
 Plan and provision resources in FABRIC.
 
@@ -6,17 +7,18 @@ Plan and provision resources in FABRIC.
 
 import argparse
 import logging
-
+from pprint import *
 #
 # Utilities
 #
 def remove_py(string):
      # our convention is that slices and modules
      # are named but file name completeion in the
-     # shell makes it eaty to submof the file name
-     # instead of slice name, etc.
-     if ".py" in string: string = string[:-3]
-     return string
+     # shell makes it easy to submit the a  name
+     # of a file instead of slice name, 
+     from pathlib import Path
+     stem = Path(string).stem
+     return f"{stem}"
 
 def print_help(args):
      "print help and exit"
@@ -28,7 +30,6 @@ def print_help(args):
 #                
 def plan(args):
      "show plan, but do not call FABRIC APIs "
-     import pdb; pdb.set_trace()
      configuration = remove_py(args.configuration)
      exec ("import {}".format(configuration))
      exec ("{}.plan()".format(configuration))
@@ -68,6 +69,38 @@ def _print(args):
      for net in slice.get_l2networks():
           print  (f"{net}")
 
+def _json(args):
+     "emit json describing slice"
+     from fabrictestbed_extensions.fablib.fablib import fablib
+     import json
+     slice_name = remove_py(args.slice_name)
+     slice = fablib.get_slice(name=slice_name)
+     net_list  = [{'name' : n.get_name(), 'layer' : f"{n.get_layer()}", 'site' : n.get_site()}
+                  for n in slice.get_networks()]
+     slice_info = {'slice_name' : slice_name}
+     node_list = []
+     for node in slice.get_nodes():
+          node_info= {}
+          node_info["name"] = node.get_name()
+          node_info["site"] = node.get_site()
+          addr_info = []
+          for addr in node.ip_addr_list():
+               mtu = addr['mtu']
+               details = [{'local': i['local']} for i in addr['addr_info']]
+               addr_info.append({'mtu': mtu,
+                                  'addr_info':details})
+          node_info['addr'] = addr_info
+          node_list.append(node_info)
+     all_info = {"info" : {"slice" : slice_info, "networks" : net_list, "nodes" : node_list }}
+
+     #Serialize and write.
+     out = json.dumps(all_info, indent=2)
+     if not args.file : args.file = f"{slice_name}.json"
+     if "." not in args.file : args.file = args.file + ".json"
+     with open(args.file, 'w') as jfile:
+          jfile.write(out)
+     logging.info(f"wrote {args.file}") 
+     
 def mass_execute(args):
      """
      Execute command(s) on all nodes in the slice.
@@ -87,23 +120,24 @@ def mass_execute(args):
      for node in slice.get_nodes():
           logging.info(f"{node} : {abbreviated_cmd}")
           stdout, stderr = node.execute(cmd)
-          print (f"{node} stdout: {stdout}")
+          print (f"{node}")
+          print (f"stdout: {stdout}")
           if stderr: logging.info( f"{node} : stderr:{stderr}")
 
-def cross_route(args):
-     """
-     Setup routes between all nodes so they can talk to each other
-     """
+     
+def execute(args):
+     "execute a command(s) on a specfic node"
      from fabrictestbed_extensions.fablib.fablib import fablib
      slice_name = remove_py(args.slice_name)
-     slice = fablib.get_slice(name=slice_name)
-     import pdb; pdb.set_trace()
-     nodes = slice.get_nodes()
-     nets  = slice.get_l2networks()
-     for net in nets:
-          pass
-
-
+     slice = fablib.get_slice(slice_name)
+     node  =slice.get_node(args.node_name)
+     cmd = args.cmd
+     if cmd[0] == "@" : cmd = open(cmd[1:],"r").read()
+     stdout, stderr = node.execute(cmd)
+     print (f"{stdout}")
+     if stderr: logging.warn(f"stderr:{stderr}")
+     
+          
 def template(args):
      pass
 
@@ -153,16 +187,27 @@ if __name__ == "__main__":
      subparser.set_defaults(func=_print)
      subparser.add_argument("slice_name", help = "slice_name")
 
-     #print
+     #_json
+     subparser = subparsers.add_parser('json', help=_json.__doc__)
+     subparser.set_defaults(func=_json)
+     subparser.add_argument("slice_name", help = "slice_name")
+     parser.add_argument('--file','-f',
+                             help='output file Def slice_name.json',
+                             default="")
+
+     #mass_execute
      subparser = subparsers.add_parser('mass_execute', help=mass_execute.__doc__)
      subparser.set_defaults(func=mass_execute)
      subparser.add_argument("slice_name", help = "slice_name")
      subparser.add_argument("cmd", help = "command")
 
-     #cross_route
-     subparser = subparsers.add_parser('cross_route', help=cross_route.__doc__)
-     subparser.set_defaults(func=cross_route)
+     #execute
+     subparser = subparsers.add_parser('execute', help=execute.__doc__)
+     subparser.set_defaults(func=execute)
      subparser.add_argument("slice_name", help = "slice_name")
+     subparser.add_argument("node_name", help = "node_name")
+     subparser.add_argument("cmd", help = "command")
+     
 
      #debug
      subparser = subparsers.add_parser('debug', help=debug.__doc__)

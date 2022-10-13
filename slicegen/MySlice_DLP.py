@@ -13,13 +13,16 @@ slice = CfSlice(__name__)
 
 node1 = CfNode(slice, 'CMBS4Node1', image,
                 disk=disk, cores=cores, ram=ram, site='TACC')
-node2 = CfNode(slice, 'CMBS4Node2', image,
-                disk=disk, cores=cores, ram=ram, site='TACC')
-
 net1 = CfL3Network(slice, 'net1')
 
+
+node2 = CfNode(slice, 'CMBS4Node2', image,
+                disk=disk, cores=cores, ram=ram, site='NCSA')
+net2 = CfL3Network(slice, 'net2')
+
+
 CfNic(slice, "Node1.NIC1", node1, net1)
-CfNic(slice, "Node2.NIC1", node2, net1)
+CfNic(slice, "Node2.NIC1", node2, net2)
 
 
 #CFCmds(slice, "Standard Install", node1, "hostname")

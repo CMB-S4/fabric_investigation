@@ -149,17 +149,15 @@ class CfSlice(CfFabric_Base):
           """
 
           import pdb ; pdb.set_trace()
-          #get a unique list of L3 -- pseudocde have to finr right stuff in API.
-          networks = [nic.get_network() for nic in self.registered_cfnics]
-          for cfnic in self.registered_cfnics:
-               node =  cfnic.get_node()
-               this_network_cfid = cfnic.cfnetwork.get_cfid()
+          for this_cfnic in self.registered_cfnics:
+               this_node =  this_cfnic.get_node()
+               this_network_cfid = this_cfnic.cfnetwork.get_cfid()
                for other_cfnic in self.registered_cfnics:
-                    other_network_cfid = cfnic.cfnetwork.get_cfid()
+                    other_network_cfid = other_cfnic.cfnetwork.get_cfid()
                     if this_network_cfid == other_network_cfid : continue
-                    gateway = other_network_cfid.get_network.get-gateway()
-                    node.set_route(node, gateway)  # pesudocode.
-     
+                    this_gateway = this_cfnic.get_network().get_gateway()
+                    other_subnet = other_cfnic.get_network().get_subnet()
+                    this_node.ip_route_add(subnet=other_subnet, gateway=this_gateway)   
      
 
 
@@ -214,8 +212,9 @@ class CfNode(CfFabric_Base):
                #nodes
                interface = cfnic.get_interface()
                self.dev = interface.get_os_interface()
-               self.ip  = cfnic.cfnetwork.get_next_ip()
-               interface.ip_addr_add(addr=self.ip, subnet=cfnic.get_network().get_subnet())
+               cfnic.ip  = cfnic.cfnetwork.get_next_ip()
+               interface.ip_addr_add(addr=cfnic.ip, subnet=cfnic.get_network().get_subnet())
+               logging.info (f'{self.site}.{self.name}.{cfnic.ip}')
                
      def register_cfnic(self, nic):
           self.cfnics.append(nic)
@@ -255,7 +254,10 @@ class CfL3Network(CfFabric_Base):
           network = slice.get_network(name=self.name)
           self.subnet         = network.get_subnet()
           self.gateway        = network.get_gateway()
+          # flatten generator to list.
           for h in self.subnet.hosts() : self.available_ips.append(h)
+          self.available_ips.pop(0) # give out the gateway, remove it.
+          logging.info(f"network,subnet,gateway,1st IP: {self.name},{self.subnet},{self.gateway},{self.available_ips[0]}...")
           pass
      
      def get_next_ip(self):
