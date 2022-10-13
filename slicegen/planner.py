@@ -52,7 +52,6 @@ def apply(args):
      "instantiate the plan by calling FABRIC APIs"
      configuration = remove_py(args.configuration)
      import importlib
-     #import pdb; pdb.set_trace()
      importlib.invalidate_caches()
      #module = importlib.import_module(args.configuration, package=None)
      exec ("import {}".format(configuration))
@@ -83,7 +82,7 @@ def _json(args):
      slice_name = slice.get_name()
      net_list  = [{'name' : n.get_name(), 'layer' : f"{n.get_layer()}", 'site' : n.get_site()}
                   for n in slice.get_networks()]
-     slice_info = {'slice_name' : slice_name}
+     slice_info = {'slice_name' : slice_name, 'slice_id' : slice.slice_id }
      node_list = []
      for node in slice.get_nodes():
           node_info= {}
@@ -91,9 +90,8 @@ def _json(args):
           node_info["site"] = node.get_site()
           addr_info = []
           for addr in node.ip_addr_list():
-               mtu = addr['mtu']
-               details = [{'local': i['local']} for i in addr['addr_info']]
-               addr_info.append({'mtu': mtu,
+               details = [{'local':i['local'], 'family':i['family']} for i in addr['addr_info'] if i['scope'] == 'global']
+               addr_info.append({'mtu': addr['mtu'], 'ifname' : addr['ifname'],
                                   'addr_info':details})
           node_info['addr'] = addr_info
           node_list.append(node_info)
