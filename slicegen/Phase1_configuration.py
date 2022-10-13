@@ -19,7 +19,7 @@ timestream_archive_node  = CfNode(slice, 'TimeArchive', image,
                              disk=disk, cores=cores, ram=ram, site='NCSA')
 transients_node          = CfNode(slice, 'Transients', image,
 		             disk=disk, cores=cores, ram=ram, site='NCSA')
-transient_archive_node   = CfNode(slice, 'TansArchive', image,
+transient_archive_node   = CfNode(slice, 'TransArchive', image,
 		             disk=disk, cores=cores, ram=ram, site='NCSA')
 
 observatory_net = CfL3Network(slice, 'observatory_net')
