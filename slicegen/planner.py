@@ -151,6 +151,11 @@ def slices(args):
      for slice in fablib.get_slices():
           print (slice.slice_id, slice.get_name())
 
+def resources(args):
+     "experimental -- take a peek at resrources"
+     #import pdb; pdb.set_trace()
+     print(fablib.list_sites())
+          
 if __name__ == "__main__":
 
     #main_parser = argparse.ArgumentParser(add_help=False)
@@ -220,6 +225,10 @@ if __name__ == "__main__":
      #slices
      subparser = subparsers.add_parser('slices', help=slices.__doc__)
      subparser.set_defaults(func=slices)
+
+     #resources
+     subparser = subparsers.add_parser('resources', help=resources.__doc__)
+     subparser.set_defaults(func=resources)
 
      
 
