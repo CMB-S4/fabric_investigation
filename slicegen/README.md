@@ -1,4 +1,3 @@
-  
 # CMBS-4 Phase on fabric invesitation FABRIC tools.
 ## Configuration  Language
 
@@ -122,7 +121,7 @@ def plan(): slice.plan()
 def apply():slice.apply()
 ```
 
-### Instantiate a Template and play with the instanitaton.
+### Instantiate the template configuration and play with the instanitaton.
 
 Makes sure you have installed FABRC SSH keyss and recently obtained
 a token from FABRIC.
