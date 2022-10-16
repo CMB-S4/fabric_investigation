@@ -122,7 +122,7 @@ def plan(): slice.plan()
 def apply():slice.apply()
 ```
 
-### Instantiate a Templates
+### Instantiate a Template and play with the instanitaton.
 
 Makes sure you have installed FABRC SSH keyss and recently obtained
 a token from FABRIC.
