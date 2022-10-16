@@ -53,9 +53,9 @@ Python 3.9.14
 $ pip install fabrictestbed
 $ pip install fabrictestbed-extensions
 ... clone this moudule from GIT```
-'''
+```
 
-### Get FABRIC Credenital
+### Get FABRIC Credentials
 
 1. Ask Don or Greg to onboard you to the "CMB-S4 Phase one project"
 
@@ -71,12 +71,13 @@ $ pip install fabrictestbed-extensions
 
 7. Select Keytype  "bastion".  Generate and download keys. Save into your diretory
 
-8. Generate a Token (a bit maddneing. try manually reload screen).
+8. Generate a Token (a bit maddening. try manually reload screen).
 
 9. Download token, Save into your directory.  Be prepared to generate a new token each working day.
 
 
-Construct files analogous to Don's and source it.
+Make a script analogue to this one and source it.
+
 ```
 export FABRIC_PROJECT_ID='bfc7d97b-ac63-48d3-976e-2d344533b108'
 export FABRIC_BASTION_HOST='bastion-1.fabric-testbed.net'
@@ -96,7 +97,7 @@ export FABRIC_SLICE_PUBLIC_KEY_FILE='/Users/donaldp/.fabric/fabric-sliver-key1.p
 
 ```
 
-### Make a configuraiton -- coy this connfiguration into template.py
+### Copy this configuration into template.py
 ``` 
 # default quantities for our nodes.                                                                                                      
 image = 'default_rocky_8'
