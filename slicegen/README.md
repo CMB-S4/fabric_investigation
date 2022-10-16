@@ -53,6 +53,7 @@ Python 3.9.14
 $ pip install fabrictestbed
 $ pip install fabrictestbed-extensions
 ... clone this moudule from GIT```
+'''
 
 ### Get FABRIC Credenital
 
@@ -96,8 +97,8 @@ export FABRIC_SLICE_PUBLIC_KEY_FILE='/Users/donaldp/.fabric/fabric-sliver-key1.p
 ```
 
 ### Make a configuraiton -- coy this connfiguration into template.py
-```
-# default quantities for our nodes.                                                                                                       
+``` 
+# default quantities for our nodes.                                                                                                      
 image = 'default_rocky_8'
 cores = 32
 ram = 128
