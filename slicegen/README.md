@@ -189,7 +189,7 @@ $ pip install fabrictestbed-extensions
 
 3. go to https://portal.fabric-testbed.net/experiments
 
-4. floow link  to "Create Slice in Portal"
+4. follow link  to "Create Slice in Portal"
 
 5. select "MANAGE SSH KEYS"
 
@@ -265,10 +265,10 @@ a token from FABRIC.
 ```
 ./planner.py plan          template            # is the template what you owant?
 ./planner.py apply         template            # go make it in FABRIC.
-./planner.py print         tempplate           # look at the instantiate conficuraiotn
-./planner.py mass_execute  template  hostname  # run  hte hostnbame command  on all nodes
-./planner.py json                              # get copius inforamtion about  your slice.
-./plannerpy  delete        template            # tear d down what you madke
+./planner.py print         template            # look at the instantiated configuraiotn
+./planner.py mass_execute  template  hostname  # runthe "hostname" command  on all nodes
+./planner.py json                              # get machine-readable information about your slice.
+./plannerpy  delete        template            # tear down what you made
 ```
 
 ```
