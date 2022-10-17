@@ -198,7 +198,7 @@ $ pip install fabrictestbed-extensions
 
 7. Select Keytype  "bastion".  Generate and download keys. Save into your diretory
 
-8. Generate a Token (a bit maddening. try manually reload screen).
+8. Generate a Token (try manually reloading screens, if needed).
 
 9. Download token, Save into your directory.  Be prepared to generate a new token each working day.
 
