@@ -4,26 +4,27 @@
 The CMB-S4 phase one use case is to "inflate" a system, demonstrate
 data flows and processing, then tear the system down. Modifying
 a running  system using fabric_objects is not in the use case.  When
-the demonstraton is done, the only action supported is to tear the
-slice down.
+the demonstraton is done, tear the sytem  down.
 
 In FABRIC, a unit of provisioning is a *slice*.  For CMB-S4 a slice is
 a collection of nodes and networks.  A FABRIC site contains nodes
 and networks. Routes between site networks allow data to be sent
 between nodes on differnet sites.
 
-fabric_objects allow CMB-S4 to create and use a topology of nodes
-and networks supporting the project's "prompt" use case. THree objects
- are used to instaniate FABRIC resources: 1)A CfNode objects describe nodes.
-2) CfNetwork objects descibe networks. 3) CfNic objects describe how nodes
-connect to networks. Additionally, CfCmds objects send commands to nodes.
-(however use planner.py to send lareg number of commands to nodes)
+fabric_objects allow CMB-S4 to create and use a topology of nodes and
+networks supporting the project's "prompt" use case. Four kinds of
+objects are used to instaniate FABRIC resources: 1)A CfSlice object
+collects all other object, commands them, and represents the notion of
+slice within FABRIC 2) A CfNode objects describe nodes.  3)CfNetwork
+objects descibe networks. 4) CfNic objects describe how nodes connect
+to networks. Additionally, a CfCmds objects send commands to nodes.
+(however use planner.py to send large number of commands to nodes)
 
-A file of python object declarations is the configuration file. In the
-configuration file the user specifies a slice, and any number of
-network, node and nic objects. The configuration file processing
-program , *planner.py* will import the configuraaion file and cause
-the objects to be instantated.
+A file of python object declarations is the configuration file, for
+an example see the quickstart section, below). onfiguration file
+specifies a slice, and any number of network, node and nic objects.
+The configuration file processing program , *planner.py* will import
+the configuration file and cause the objects to be instantated.
 
 "Plan level" prints out, in human readable form, a good deal of
 information about what would be instantiated. This output helps an
@@ -35,55 +36,17 @@ FABRIC.
 
 "Apply level" repeats the steps of planning, and then calls FABRIC
 APIS to instantiate the plan. A slice object is instantiated,
-nodes, then networks are declared to FABRIC. The FABRIC infrastructre
-NCSA-P10H00412:slicegen donaldp$ cat  fabric_objects.py 
-"""A collection of objects that provides resources in FABRIC for
-CMB-S4 Phase one testing.
+nodes, then networks are declared to FABRIC. Inforamation in
+CFNic objects is use to connect nodes to site networks. Routes
+are setup allowing all nodes to tale to all other nodes. Finally,
+commands are issued in the order they have been declared.
 
-The CMB-S4 phase one use case is to "inflate" a system, demonstrate
-data flows and processing, then tear the system down. Modifying
-a running  system using fabric_objects is not in the use case.  When
-the demonstraton is done, the only action supported is to tear the
-slice down.
+## planner.py
 
-In FABRIC, a unit of provisioning is a *slice*.  For CMB-S4 a slice is
-a collection of nodes and networks.  A FABRIC site contains nodes
-and networks. Routes between site networks allow data to be sent
-between nodes on differnet sites.
-
-fabric_objects allow CMB-S4 to create and use a topology of nodes
-and networks supporting the project's "prompt" use case. THree objects
- are used to instaniate FABRIC resources: 1)A CfNode objects describe nodes.
-2) CfNetwork objects descibe networks. 3) CfNic objects describe how nodes
-connect to networks. Additionally, CfCmds objects send commands to nodes.
-(however use planner.py to send lareg number of commands to nodes)
-
-A file of python object declarations is the configuration file. In the
-configuration file the user specifies a slice, and any number of
-network, node and nic objects. The configuration file processing
-program , *planner.py* will import the configuraaion file and cause
-the objects to be instantated.
-
-"Plan level" prints out, in human readable form, a good deal of
-information about what would be instantiated. This output helps an
-author determine whether the configuration is what was intended, and can
-serve to document the configuration.  Planning does not allocate
-resources in FABRIC, and does not cause any FABRIC API's to be called.
-i.e. A user running at Plan level need not be credentialed to access
-FABRIC.
-
-"Apply level" repeats the steps of planning, and then calls FABRIC
-APIS to instantiate the plan. A slice object is instantiated,
-nodes, then networks are declared to FABRIC. The FABRIC infrastructre
-realizes the declared system in hardware. Live Networks and Nodes
-are configured. Finally, Routes are establised between all nodes
-and all networks. Finally any commands are issued in the order they
-were declared.
-
-planner.py is available to access the nodes, tear down the system
+A driver program, planner.py reads the python configuration files,
+and starts the "plan", "apply" functions.  plnner.py also perfi
 and perform other operations.
 
-## Configuration  Language
 
 ### CfSlice(name, **kwargs)
 Collect the nodes and networks for a slice.                                                                                          
@@ -102,7 +65,7 @@ Kwargs:
     - delay -- seconds to delay before calling submit.
                                                                       ~
 
-###CfNode (slice, name, image, **kwargs)
+### CfNode (slice, name, image, **kwargs)
 
 Create a Node, and specify non-network resources for the node.
 
@@ -117,7 +80,7 @@ Keword arguments
      - disk  -- GB of Disk for the node  (def 100)
      - site  -- FABRIC site for the node.(def NCSA)
 
-CfL3Network (slice, name, image, **kwrgs)
+### CfL3Network (slice, name, image, **kwrgs)
      Create a IPV4 L3 network.
 
      slice  - slice object
@@ -179,7 +142,7 @@ extention is suppled), the extention is ignored). This feature suports
 shell commandline completion environamente. However, ti  convention
 limits configuration  file names to valid python module names.
 
-## Quickstert
+## Quickstart
 
 ### Install Supporting FABRIC libraries
 
