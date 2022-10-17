@@ -51,8 +51,8 @@ Collect the nodes and networks for a slice.
                                                                                                                                          
 When planning cause the objects  to print information.                                                                               
 
-When applyingg, cause the objects to make relevent calls                                                                            
-to the FABRIC APIS. When all objects are processed wait
+When applying, cause the objects to make relevent calls                                                                            
+to the FABRIC APIS. When all objects are processed, wait
 for *delay* seconds before calling  *submit*.                                                                                        
 
 
@@ -131,7 +131,6 @@ and starts the "plan", "apply" functions.  planner.py also performs
 other operations, as indicated below.
 
 
-
 ```
 usage: planner.py [-h] [--loglevel LOGLEVEL] {plan,apply,delete,print,json,mass_execute,execute,debug,slices,sites} ...
 
@@ -184,19 +183,19 @@ $ pip install fabrictestbed-extensions
 
 ### Get FABRIC Credentials
 
-1. Ask Don or Greg to onboard you to the "CMB-S4 Phase one project"
+1. Ask Don or Greg to onboard you to the "CMB-S4 Phase one project."
 
-2. Make a directory to hold the credentials you will make and download 
+2. Make a directory to hold the credentials you will make and download. 
 
-3. go to https://portal.fabric-testbed.net/experiments
+3. go to https://portal.fabric-testbed.net/experiments.
 
-4. follow link  to "Create Slice in Portal"
+4. follow link  to "Create Slice in Portal."
 
-5. select "MANAGE SSH KEYS"
+5. select "MANAGE SSH KEYS."
 
 6. Select Key Type "sliver".  Generate and download keys. Save into your direcory.
 
-7. Select Keytype  "bastion".  Generate and download keys. Save into your diretory
+7. Select Key Type  "bastion". Generate and download keys. Save into your diretory.
 
 8. Generate a Token (try manually reloading screens, if needed).
 
@@ -249,9 +248,9 @@ def plan(): slice.plan()
 def apply():slice.apply()
 ```
 
-### Instantiate the template configuration and play with the instanitaton.
+### Instantiate the template configuration and play with the instantiation.
 
-Makes sure you have installed FABRC SSH keys and recently obtained
+Make sure you have installed FABRIC SSH keys and recently obtained
 a token from FABRIC.
 
 ```
