@@ -52,10 +52,14 @@ When planning cause the objects  to print information.
 When applyingg, cause the objects to make relevent calls                                                                            
 to the FABRIC APIS. When all objects are processed wait
 for *delay* seconds before calling  *submit*.                                                                                        
-                                                       
-Positional args
+
+
+Positional arguments
+
+```
     - name -- any ascii name for the slice. By convention,
       use __FILE__.
+```
 
 Kwargs:
     - delay -- seconds to delay before calling submit.
@@ -65,39 +69,54 @@ Kwargs:
 
 Create a Node, and specify non-network resources for the node.
 
+Positional arguments
+```
 slice  - slice object
 name   - unique human-readbale name of node
 image  - Operating system image to load on node
+```
 
-Keword arguments
-
+Keyword arguments
+```
      - cores -- Number of cores for node (def 20)
      - ram   -- GB of ram for the node   (def 40)
      - disk  -- GB of Disk for the node  (def 100)
      - site  -- FABRIC site for the node.(def NCSA)
+```
 
 ### CfL3Network (slice, name, image, **kwrgs)
+
      Create a IPV4 L3 network.
 
+Positional arguments
+```
      slice  - slice object
      name   - unique human-readbale name of node
      image  - Operating system image to load on node
-     
-     Kwargs:
+```
+
+Keyword arguments
+```
      None yet (type == IPV4, IPV6 envisioned)
+```
 
 ### CfNIC (cfslice,  name,  cfnode, cfnetwork, **kwargs)
 
-     Bind a  Network interface card to a node and  netwwork
+     Bind a  Network interface card to a node and  network
+
+Positional arguments:
+```
      cfslice         - slice object owning the NIC
      name            - unique human-readable name of NIC
      cfnode          - node object NIC is associated with
      cfnetwork       - network object NIC is associated with
+```
 
-     Kwargs:
+Keyword arguments:
+```
      - model -- NIC model (def NIC_Basic))
      - mtu   -- max packet size (def = 1500)
-
+```
 
 ## Planner.py
 
