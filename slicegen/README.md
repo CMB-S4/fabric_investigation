@@ -127,8 +127,8 @@ Keyword arguments:
 ## Planner.py
 
 A driver program, planner.py reads the python configuration files,
-and starts the "plan", "apply" functions.  palnner.py also performs
-and perform other operations, as indicated below.
+and starts the "plan", "apply" functions.  planner.py also performs
+other operations, as indicated below.
 
 
 
