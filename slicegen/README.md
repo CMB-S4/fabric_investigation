@@ -56,29 +56,31 @@ to the FABRIC APIS. When all objects are processed wait
 for *delay* seconds before calling  *submit*.                                                                                        
 
 
-Positional arguments
+Positional arguments:
 
 ```
     - name -- any ascii name for the slice. By convention,
       use __FILE__.
 ```
 
-Kwargs:
+Keyword arguments:
+
+```
     - delay -- seconds to delay before calling submit.
-                                                                      ~
+```                                                                      ~
 
 ### CfNode (slice, name, image, **kwargs)
 
 Create a Node, and specify non-network resources for the node.
 
-Positional arguments
+Positional arguments:
 ```
 slice  - slice object
 name   - unique human-readbale name of node
 image  - Operating system image to load on node
 ```
 
-Keyword arguments
+Keyword arguments:
 ```
      - cores -- Number of cores for node (def 20)
      - ram   -- GB of ram for the node   (def 40)
@@ -90,14 +92,14 @@ Keyword arguments
 
      Create a IPV4 L3 network.
 
-Positional arguments
+Positional arguments:
 ```
      slice  - slice object
      name   - unique human-readbale name of node
      image  - Operating system image to load on node
 ```
 
-Keyword arguments
+Keyword arguments:
 ```
      None yet (type == IPV4, IPV6 envisioned)
 ```
@@ -119,6 +121,7 @@ Keyword arguments:
      - model -- NIC model (def NIC_Basic))
      - mtu   -- max packet size (def = 1500)
 ```
+
 
 ## Planner.py
 
@@ -160,10 +163,11 @@ optional arguments:
 By convention, slice names are named by the python configuration file
 used to create them. For example template.py would be used to create a
 slice named template.  Planner.py supports this convention when the
-arguement reuires a slice name and a .py (or any other file type
+argument requires a slice name and a .py (or any other file type
 extention is suppled), the extention is ignored). This feature suports
-shell commandline completion environamente. However, ti  convention
-limits configuration  file names to valid python module names.
+shell commandline completion environments. However, this  convention
+limits configuration file names to valid python module names.
+
 
 ## Quickstart
 
