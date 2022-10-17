@@ -68,7 +68,7 @@ Keyword arguments:
 ```
     - delay -- seconds to delay before calling submit.
     
-```                                                                      ~
+```                                                               ~
 
 ### CfNode (slice, name, image, **kwargs)
 
