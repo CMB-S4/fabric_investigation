@@ -249,15 +249,6 @@ def plan(): slice.plan()
 def apply():slice.apply()
 ```
 
-By convention, slice names are named by the python configuration file
-used to create them. For example template.py would be used to create a
-slice named template.  Planner.py supports this convention when the
-arguement reuires a slice name and a .py (or any other file type
-extention is suppled), the extention is ignored). This feature suports
-shell commandline completion environamente. However, this convention
-limits configuration  file names to valid python module names.
-
-
 ### Instantiate the template configuration and play with the instanitaton.
 
 Makes sure you have installed FABRC SSH keys and recently obtained
