@@ -1,10 +1,10 @@
-# CMBS-4 Phase on fabric invesitation FABRIC tools.
+# CMBS-4 Phase one fabric invesitation FABRIC tools.
 
 ## Overview
 The CMB-S4 phase one use case is to "inflate" a system, demonstrate
 data flows and processing, then tear the system down. Modifying
 a running  system using fabric_objects is not in the use case.  When
-the demonstraton is done, tear the sytem  down.
+the demonstraton is done, we must tear the system  down.
 
 In FABRIC, a unit of provisioning is a *slice*.  For CMB-S4 a slice is
 a collection of nodes and networks.  A FABRIC site contains nodes
@@ -13,16 +13,18 @@ between nodes on differnet sites.
 
 fabric_objects allow CMB-S4 to create and use a topology of nodes and
 networks supporting the project's "prompt" use case. Four kinds of
-objects are used to instaniate FABRIC resources: 1)A CfSlice object
-collects all other object, commands them, and represents the notion of
-slice within FABRIC 2) A CfNode objects describe nodes.  3)CfNetwork
-objects descibe networks. 4) CfNic objects describe how nodes connect
-to networks. Additionally, a CfCmds objects send commands to nodes.
-(however use planner.py to send large number of commands to nodes)
+objects are used to instantiate FABRIC resources: 1)A CfSlice object
+collects all other objects, invode the object's methods, and
+represents the notion of slice within FABRIC 2) A CfNode objects
+describe nodes.  3)The CfNetwork objects describe networks. In FABRIC.
+a network is the network withing a site. 4) CfNic objects describe how
+nodes connect to networks. Additionally, CfCmds objects send commands
+to nodes.  (however use planner.py to send large number of commands to
+nodes)
 
-A file of python object declarations is the configuration file, for
-an example see the quickstart section, below). onfiguration file
-specifies a slice, and any number of network, node and nic objects.
+A file of python object declarations is the configuration file. For
+an example, see the quickstart section, below. A Configuration file
+specifies a slice,  and any number of network, node and nic objects.
 The configuration file processing program , *planner.py* will import
 the configuration file and cause the objects to be instantated.
 
@@ -36,9 +38,9 @@ FABRIC.
 
 "Apply level" repeats the steps of planning, and then calls FABRIC
 APIS to instantiate the plan. A slice object is instantiated,
-nodes, then networks are declared to FABRIC. Inforamation in
-CFNic objects is use to connect nodes to site networks. Routes
-are setup allowing all nodes to tale to all other nodes. Finally,
+nodes, then networks are declared to FABRIC. Information in
+CfNic objects is used to connect nodes to site networks. Routes
+are setup allowing all nodes to talk to all other nodes. Finally,
 commands are issued in the order they have been declared.
 
 
