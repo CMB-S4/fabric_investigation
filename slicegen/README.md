@@ -137,7 +137,7 @@ usage: planner.py [-h] [--loglevel LOGLEVEL] {plan,apply,delete,print,json,mass_
 Plan and provision resources in FABRIC.
 
 positional arguments:
-  {plan,apply,delete,print,json,mass_execute,execute,debug,slices,sites}
+  {plan,apply,delete,print,json,mass_execute,execute,debug,slices,sites, health}
     plan                Show plan, but do not call FABRIC APIs
     apply               Instantiate the plan by calling FABRIC APIs
     delete              Delete a slice, if it exists
@@ -152,7 +152,8 @@ positional arguments:
     debug               Call a slice into memory and start the debugger
     slices              Print the name of all my slices
     sites               Print the list of FABRIC resouroces at each site.
-
+    health              test topology health by having each node ping all the others
+    
 optional arguments:
   -h, --help            show this help message and exit
   --loglevel LOGLEVEL, -l LOGLEVEL

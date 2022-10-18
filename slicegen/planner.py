@@ -136,7 +136,29 @@ def execute(args):
      print (f"{stdout}")
      if stderr: logging.warn(f"stderr:{stderr}")
      
-          
+
+def health(args):
+     "test topology health by having each node ping all the others"
+     slice = get_slice(args)
+     slice_name  = slice.get_name()
+     with open(slice_name + ".digest","r") as f:
+          lines = f.read()
+          lines = lines.split("\n")
+          lines = [l.split(" ") for l in lines]
+          lines = lines[:-1]
+          nodes = [l[0] for l in lines]
+          ips   = [l[1] for l in lines]
+          logging.info(f"{nodes}, {ips}")
+          for node in nodes:
+               cmds = [f"ping -c 2 {ip} > /dev/null ; echo $?" for ip in ips]
+               for cmd in cmds:
+                    logging.debug (f"{node} : {cmd}")
+                    (stdout, stderr) = slice.get_node(node).execute(f"{cmd}")
+                    logging.debug (f"{node} stdout: {stdout}") 
+                    logging.debug (f"{node} stderr: {stderr}") 
+                    status = "healthy" if stdout == "0\n" else  "broken "
+                    print (f"{node} {status} {cmd}")
+     
 def template(args):
      pass
 
@@ -229,6 +251,11 @@ if __name__ == "__main__":
      subparser = subparsers.add_parser('resources', help=resources.__doc__)
      subparser.set_defaults(func=resources)
 
+     #health
+     subparser = subparsers.add_parser('health', help=health.__doc__)
+     subparser.set_defaults(func=health)
+     subparser.add_argument("-i", "--id", help = "slice is an ID, not a name", action='store_true',  default=False)
+     subparser.add_argument("slice_name", help = "slice name or id")
      
 
      args = parser.parse_args()
