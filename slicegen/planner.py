@@ -20,6 +20,7 @@ def remove_py(string):
      # of a file instead of slice name, 
      from pathlib import Path
      stem = Path(string).stem
+     if stem[-1] == '.': stem = stem[:-1] 
      return f"{stem}"
 
 def print_help(args):
@@ -120,12 +121,10 @@ def mass_execute(args):
      abbreviated_cmd = shorten(cmd)
      if len(cmd) > 40 : abbreviated_cmd = f"{cmd[:20]}...{cmd[-20:]}"
      for node in slice.get_nodes():
-          logging.info(f"{node} : {abbreviated_cmd}")
+          logging.info(f"{node.get_name()} : {abbreviated_cmd}")
           stdout, stderr = node.execute(cmd)
-          print (f"{node}")
-          print (f"stdout: {stdout}")
-          if stderr: logging.info( f"{node} : stderr:{stderr}")
-
+          print (f"{node.get_name()} stdout: {stdout}")
+          if stderr: logging.info( f"{node.get_name()} : stderr:{stderr}")
      
 def execute(args):
      "execute a command(s) on a specfic node"

@@ -1,22 +1,29 @@
-"""
-A collection of objects that provides resources in FABRIC for
+""" collection of objects that provides resources in FABRIC for
 CMB-S4 Phase one testing.
 
+The CMB-S4 phase one use case is to "inflate" a system, demonstrate
+data flows and processing, then tear the system down. Modifying
+a running  system using fabric_objects is not in the use case.  When
+the demonstraton is done, the only action supported is to tear the
+slice down.
+
 In FABRIC, a unit of provisioning is a *slice*.  For CMB-S4 a slice is
-a collection of nodes and networks.  node and networks are contained
-within a FABRIC site. ROutes between site networks connect allow
-data to be sent between nodes on differnet sites.
+a collection of nodes and networks.  A FABRIC site contains nodes
+and networks. Routes between site networks allow data to be sent
+between nodes on differnet sites.
 
-afNode objects describe nodes. CFnetwork objects descibe neteorks.
-CfNic object describe how nodes conenct to networks.  CfCmds objects
-send commands to nodes. (however use planner.py to send commanbd
-to nodes)
+fabric_objects allow CMB-S4 to create and use a topology of nodes
+and networks supporting the project's "prompt" use case. THree objects
+ are used to instaniate FABRIC resources: 1)A CfNode objects describe nodes.
+2) CfNetwork objects descibe networks. 3) CfNic objects describe how nodes
+connect to networks. Additionally, CfCmds objects send commands to nodes.
+(however use planner.py to send lareg number of commands to nodes)
 
-A file of python object declaration is the configuration file. In The
+A file of python object declarations is the configuration file. In the
 configuration file the user specifies a slice, and any number of
-network, node and nic objects. pydoc3. The configuration file
-processing program , *planner.py* will import the conficguraion file
-and cause the objects to be instantated, t the  "plan" or "apply" Level.
+network, node and nic objects. The configuration file processing
+program , *planner.py* will import the configuraaion file and cause
+the objects to be instantated.
 
 "Plan level" prints out, in human readable form, a good deal of
 information about what would be instantiated. This output helps an
@@ -28,20 +35,14 @@ FABRIC.
 
 "Apply level" repeats the steps of planning, and then calls FABRIC
 APIS to instantiate the plan. A slice object is instantiated,
-nodes, then networkds are declared to FABRIC. The FABRIC infrastructre i
-realize the declared system in hardware. Live Networks and Nodes
- are configures. Finally, Routes are establised between all nodes
-and all networks. Finally and command  are issued in the order they
-were decalred.
+nodes, then networks are declared to FABRIC. The FABRIC infrastructre
+realizes the declared system in hardware. Live Networks and Nodes
+are configured. Finally, Routes are establised between all nodes
+and all networks. Finally any commands are issued in the order they
+were declared.
 
-planner.py is availble to access the nodes, tera down the system
-and perform other operations. 
-
-The CMB_s4 phase one use case is to "inflate" a system, demonstrate
-data flows and processing, then tear the system down. Modifying
-a running  system using fabric_objects is not in the use case.  When
-the demonstraton is done, the only action supported is to tear the
-slice down.
+planner.py is available to access the nodes, tear down the system
+and perform other operations.
 
 """
 # https://github.com/fabric-testbed/jupyter-examples/blob/master/fabric_examples/public_demos/KNIT5/KNIT5_Creating_FABnet_Networks/KNIT5_Tutorial_Creating_FABnet_Networks.ipynb
@@ -54,7 +55,7 @@ import logging
 
 from fabrictestbed_extensions.fablib.fablib import FablibManager as fablib_manager
 fablib = fablib_manager()             
-fablib.show_config()
+#fablib.show_config()
 
 class CfFabric_Base:
      """
@@ -145,7 +146,7 @@ class CfSlice(CfFabric_Base):
           # networks first.
           
           for cfnetwork in self.registered_cfnetworks: cfnetwork.configure()
-          for cfnode in self.registered_cfnodes: cfnode.configure()
+          for cfnode in self.registered_cfnodes:       cfnode.configure()
           for cfcmd     in self.registered_cfcmds:     cfcmd.configure()
           self.configure()
 
@@ -163,18 +164,32 @@ class CfSlice(CfFabric_Base):
      def configure(self):
           """
           For every node, confgure a route to every other subnet in this slice.
+          print out the digest file. 
+          make a digest -- list of (network_name, subnets)
           """
-
+ 
           for this_cfnic in self.registered_cfnics:
-               this_node =  this_cfnic.get_node()
-               this_network_cfid = this_cfnic.cfnetwork.get_cfid()
-               for other_cfnic in self.registered_cfnics:
-                    other_network_cfid = other_cfnic.cfnetwork.get_cfid()
-                    if this_network_cfid == other_network_cfid : continue
-                    this_gateway = this_cfnic.get_network().get_gateway()
-                    other_subnet = other_cfnic.get_network().get_subnet()
-                    this_node.ip_route_add(subnet=other_subnet, gateway=this_gateway)   
-     
+               this_node_name         = this_cfnic.get_node().get_name()
+               this_network_name      = this_cfnic.get_network().get_name()
+               for a_cfnic in self.registered_cfnics:
+                    if a_cfnic.get_network().get_name() == this_network_name :
+                         #routes not needed between nodes on same net.
+                         continue
+                    # make a route to a non-native network
+                    a_subnet  = a_cfnic.get_network().get_subnet()
+                    gateway   = this_cfnic.get_network().get_gateway()
+                    node      = this_cfnic.get_node()
+                    node.ip_route_add(subnet=a_subnet, gateway=gateway)
+                    #log it
+                    node_name = node.get_name()
+                    net_name  = a_cfnic.get_network().get_name()
+                    logging.info(f"routing node {node_name} to network {net_name}"
+                                 )
+          with open(f"{self.name}.digest","w") as f:
+               for cfnic in self.registered_cfnics:
+                    node_name = cfnic.get_node().get_name()
+                    ip_address = cfnic.ip
+                    f.write(f"{node_name} {ip_address}\n")
 
 
 class CfNode(CfFabric_Base):
