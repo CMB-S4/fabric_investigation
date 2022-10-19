@@ -60,7 +60,7 @@ Positional arguments:
 
 ```
     - name -- any ascii name for the slice. By convention,
-      use __FILE__.
+      use __name__.
 ```
 
 Keyword arguments:
