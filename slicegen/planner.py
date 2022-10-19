@@ -149,15 +149,26 @@ def health(args):
           nodes = [l[0] for l in lines]
           ips   = [l[1] for l in lines]
           logging.info(f"{nodes}, {ips}")
+          n_errors = 0
           for node in nodes:
                cmds = [f"ping -c 2 {ip} > /dev/null ; echo $?" for ip in ips]
                for cmd in cmds:
                     logging.debug (f"{node} : {cmd}")
-                    (stdout, stderr) = slice.get_node(node).execute(f"{cmd}")
-                    logging.debug (f"{node} stdout: {stdout}") 
-                    logging.debug (f"{node} stderr: {stderr}") 
-                    status = "healthy" if stdout == "0\n" else  "broken "
-                    print (f"{node} {status} {cmd}")
+                    try:
+                         (stdout, stderr) = slice.get_node(node).execute(f"{cmd}")
+                    except Exception as e:
+                         print (f"{node} broken {e.args}")
+                         n_errors = n_errors + 1
+                    else:
+                         logging.debug (f"{node} stdout: {stdout}") 
+                         logging.debug (f"{node} stderr: {stderr}") 
+                         if stdout == "0\n" :
+                              status = "healthy"
+                         else:
+                              status = "broken "
+                              n_errors = n_errors + 1
+                         print (f"{node} {status} {cmd}")
+     exit(n_errors)                 
      
 def template(args):
      pass
