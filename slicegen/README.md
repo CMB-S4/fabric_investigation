@@ -81,7 +81,7 @@ name   - unique human-readbale name of node
 image  - Operating system image to load on node
 ```
 
-Keyword arguments:
+`Keyword arguments:
 ```
      - cores -- Number of cores for node (def 20)
      - ram   -- GB of ram for the node   (def 40)
@@ -194,16 +194,25 @@ $ pip install fabrictestbed-extensions
 
 5. select "MANAGE SSH KEYS."
 
+5. Make note of your "Bastion login"
+
 6. Select Key Type "sliver".  Generate and download keys. Save into your direcory.
 
 7. Select Key Type  "bastion". Generate and download keys. Save into your diretory.
 
-8. Generate a Token (try manually reloading screens, if needed).
+8. Protec all keys (eg chmod  400 or similar)
 
-9. Download token, Save into your directory.  Be prepared to generate a new token each working day.
+9. Generate a Token (try manually reloading screens, if needed).
 
+10. Download token, Save into your directory.  Be prepared to generate a new token each working day.
+
+
+```
+
+### Make a script  to source environment variables.
 
 Make a script analogue to this one and source it.
+you will make the abric-ssh-config file in the next step.
 
 ```
 export FABRIC_PROJECT_ID='bfc7d97b-ac63-48d3-976e-2d344533b108'
@@ -211,7 +220,7 @@ export FABRIC_BASTION_HOST='bastion-1.fabric-testbed.net'
 export FABRIC_CREDMGR_HOST='cm.fabric-testbed.net'
 export FABRIC_ORCHESTRATOR_HOST='orchestrator.fabric-testbed.net'
 
-export FABRIC_BASTION_USERNAME='petravic_0019236276'
+export FABRIC_BASTION_USERNAME='petravic_0019236276'   #bastion Login
 
 export FABRIC_TOKEN_LOCATION='/Users/donaldp/.fabric/id_token.json'
 
@@ -221,6 +230,29 @@ export FABRIC_BASTION_PUBLIC_KEY_LOCATION='/Users/donaldp/.fabric/fabric-bastion
 
 export FABRIC_SLICE_PRIVATE_KEY_FILE='/Users/donaldp/.fabric/fabric-sliver-key1'
 export FABRIC_SLICE_PUBLIC_KEY_FILE='/Users/donaldp/.fabric/fabric-sliver-key1.pub'
+export FABRIC_SSH_CONFIGURATION_FILE='/Users/donaldp/.fabric/fabric-ssh-config'
+```
+
+###  Make a ssh config file for the jump host
+
+Make a ssh  configuration file analogous to this one to support the FABIC Jump Host
+in the location pointed to by FABRIC_SSH_CONFIGURATION_FILE
+
+```
+UserKnownHostsFile /dev/null
+StrictHostKeyChecking no
+ServerAliveInterval 120
+
+Host bastion-1.fabric-testbed.net
+User petravic_0019236276
+ForwardAgent yes
+Hostname %h
+IdentityFile /Users/donaldp/.fabric/fabric-bastion-key1
+IdentitiesOnly yes
+
+Host * !bastion-?.fabric-testbed.net
+ProxyJump petravic_0019236276@bastion-1.fabric-testbed.net:22
+##ProxyJump petravic_0019236276@bastion-2.fabric-testbed.net:22
 
 ```
 

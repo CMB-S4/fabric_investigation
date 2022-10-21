@@ -41,8 +41,31 @@ def get_slice(args):
                logging.error(f"slice {name} does not exist")
                exit(1)
      return slice
-#   
-#                
+
+class Digest:
+     "provide interfaces to digest file" 
+     def __init__(self, slice_name):
+          self.slice_name = slice_name
+          with open (slice_name + ".digest") as f : lines = f.read()
+          
+          #format is node<blank>ip-address\n
+          lines = lines.split("\n")
+          lines = [l.split(" ") for l in lines]
+          lines = lines[:-1]
+          self.nodes = [l[0] for l in lines]
+          self.ips   = [l[1] for l in lines]
+          logging.info(f"Digest file: {self.nodes}, {self.ips}")
+
+     def get_nodes(self): return self.nodes
+
+     def get_ips(self): return self.nodes
+
+     def get_node_ips(self) : return zip(*[self.nodes, self.ips])
+
+#
+#  end of utilities, beginning of command implementations
+#
+    
 def plan(args):
      "show plan, but do not call FABRIC APIs "
      configuration = remove_py(args.configuration)
@@ -141,33 +164,26 @@ def health(args):
      "test topology health by having each node ping all the others"
      slice = get_slice(args)
      slice_name  = slice.get_name()
-     with open(slice_name + ".digest","r") as f:
-          lines = f.read()
-          lines = lines.split("\n")
-          lines = [l.split(" ") for l in lines]
-          lines = lines[:-1]
-          nodes = [l[0] for l in lines]
-          ips   = [l[1] for l in lines]
-          logging.info(f"{nodes}, {ips}")
-          n_errors = 0
-          for node in nodes:
-               cmds = [f"ping -c 2 {ip} > /dev/null ; echo $?" for ip in ips]
-               for cmd in cmds:
-                    logging.debug (f"{node} : {cmd}")
-                    try:
-                         (stdout, stderr) = slice.get_node(node).execute(f"{cmd}")
-                    except Exception as e:
-                         print (f"{node} broken {e.args}")
-                         n_errors = n_errors + 1
+     digest = Digest(slice_name)
+     n_errors = 0
+     for node in nodes:
+          cmds = [f"ping -c 2 {ip} > /dev/null ; echo $?" for ip in ips]
+          for cmd in cmds:
+               logging.debug (f"{node} : {cmd}")
+               try:
+                    (stdout, stderr) = slice.get_node(node).execute(f"{cmd}")
+               except Exception as e:
+                    print (f"{node} broken {e.args}")
+                    n_errors = n_errors + 1
+               else:
+                    logging.debug (f"{node} stdout: {stdout}") 
+                    logging.debug (f"{node} stderr: {stderr}") 
+                    if stdout == "0\n" :
+                         status = "healthy"
                     else:
-                         logging.debug (f"{node} stdout: {stdout}") 
-                         logging.debug (f"{node} stderr: {stderr}") 
-                         if stdout == "0\n" :
-                              status = "healthy"
-                         else:
-                              status = "broken "
-                              n_errors = n_errors + 1
-                         print (f"{node} {status} {cmd}")
+                         status = "broken "
+                         n_errors = n_errors + 1
+               print (f"{node} {status} {cmd}")
      exit(n_errors)                 
      
 def template(args):
@@ -184,10 +200,42 @@ def slices(args):
           print (slice.slice_id, slice.get_name())
 
 def resources(args):
-     "experimental -- take a peek at resrources"
+     "experimental -- take a peek at resources"
      #import pdb; pdb.set_trace()
      print(fablib.list_sites())
+
+def aliases (args):
+     """
+     Print out alias for ssh commands to each  node.
+     Note that FABRIC nodes with IPV6 addresses cannot be
+     reached from sites not supporting IPV6.
+
+     "-u prints correponding unalias commands.
+
+      """
+
+     if not args.unalias:
+          slice = get_slice(args)
+          for node in slice.get_nodes():
+               name = node.get_name()
+               ip   = f"{node.get_management_ip()}"
+               username = "rocky"
+               print (f"alias {name}='ssh -F $FABRIC_SSH_CONFIGURATION_FILE -i $FABRIC_SLICE_PRIVATE_KEY_FILE {username}@{ip}'")
+          return
+
+     names = []
+     try: 
+          slice = get_slice(args)
+          names  = [node.get_name() for node in slice.get_nodes()]
+     except:
+          logging.info("slice is gone, seeing if there is a digest")     
+     if not names:
+          digest = Digest(args.slice_name)
+          names = [name for name in digest.get_nodes()]
           
+     for name in names :print (f"unalias '{name}'")
+     
+     
 if __name__ == "__main__":
 
     #main_parser = argparse.ArgumentParser(add_help=False)
@@ -266,6 +314,13 @@ if __name__ == "__main__":
      subparser = subparsers.add_parser('health', help=health.__doc__)
      subparser.set_defaults(func=health)
      subparser.add_argument("-i", "--id", help = "slice is an ID, not a name", action='store_true',  default=False)
+     subparser.add_argument("slice_name", help = "slice name or id")
+
+     #aliases
+     subparser = subparsers.add_parser('aliases', help=aliases.__doc__)
+     subparser.set_defaults(func=aliases )
+     subparser.add_argument("-i", "--id", help = "slice is an ID, not a name", action='store_true',  default=False)
+     subparser.add_argument("-u", "--unalias", help = "unalias", action='store_true',  default=False)
      subparser.add_argument("slice_name", help = "slice name or id")
      
 
