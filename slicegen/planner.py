@@ -52,15 +52,15 @@ class Digest:
           lines = lines.split("\n")
           lines = [l.split(" ") for l in lines]
           lines = lines[:-1]
-          self.nodes = [l[0] for l in lines]
+          self.names = [l[0] for l in lines]
           self.ips   = [l[1] for l in lines]
-          logging.info(f"Digest file: {self.nodes}, {self.ips}")
+          logging.info(f"Digest file: {self.names}, {self.ips}")
 
-     def get_nodes(self): return self.nodes
+     def get_names(self): return self.names
 
-     def get_ips(self): return self.nodes
+     def get_ips(self): return self.ips
 
-     def get_node_ips(self) : return zip(*[self.nodes, self.ips])
+     def get_names_ips(self) : return zip(*[self.names, self.ips])
 
 #
 #  end of utilities, beginning of command implementations
@@ -166,24 +166,26 @@ def health(args):
      slice_name  = slice.get_name()
      digest = Digest(slice_name)
      n_errors = 0
-     for node in nodes:
+     ips = digest.get_ips()
+     for node_name in digest.get_names():
           cmds = [f"ping -c 2 {ip} > /dev/null ; echo $?" for ip in ips]
           for cmd in cmds:
-               logging.debug (f"{node} : {cmd}")
+               logging.debug (f"{node_name} : {cmd}")
                try:
-                    (stdout, stderr) = slice.get_node(node).execute(f"{cmd}")
+                    (stdout, stderr) = slice.get_node(node_name).execute(f"{cmd}")
                except Exception as e:
-                    print (f"{node} broken {e.args}")
+                    logging.error("Exception", e)
+                    print (f"{node_name} broken {e.args}")
                     n_errors = n_errors + 1
                else:
-                    logging.debug (f"{node} stdout: {stdout}") 
-                    logging.debug (f"{node} stderr: {stderr}") 
+                    logging.debug (f"{node_name} stdout: {stdout}") 
+                    logging.debug (f"{node_name} stderr: {stderr}") 
                     if stdout == "0\n" :
                          status = "healthy"
                     else:
                          status = "broken "
                          n_errors = n_errors + 1
-               print (f"{node} {status} {cmd}")
+               print (f"{node_name} {status} {cmd}")
      exit(n_errors)                 
      
 def template(args):
@@ -231,11 +233,26 @@ def aliases (args):
           logging.info("slice is gone, seeing if there is a digest")     
      if not names:
           digest = Digest(args.slice_name)
-          names = [name for name in digest.get_nodes()]
+          names = [name for name in digest.get_names()]
           
      for name in names :print (f"unalias '{name}'")
-     
-     
+
+def dns(args):
+     """
+     Setup /etc/hosts so all node can addess all others by name.
+     These names can be made up and don't leak out of FABRIC.
+     """
+     slice = get_slice(args)
+     digest = Digest(args.slice_name)
+     subdomain = args.subdomain
+     for this_name in digest.get_names():
+          this_node = slice.get_node(this_name)
+          for name, ip in digest.get_names_ips():
+               if name == this_name: continue
+               cmd = f"echo '{ip} {name}.{subdomain}' >> /etc/hosts"
+               logging.info(f"executng {cmd} on {this_name}") 
+               node.exectute(cmd)
+
 if __name__ == "__main__":
 
     #main_parser = argparse.ArgumentParser(add_help=False)
@@ -321,6 +338,13 @@ if __name__ == "__main__":
      subparser.set_defaults(func=aliases )
      subparser.add_argument("-i", "--id", help = "slice is an ID, not a name", action='store_true',  default=False)
      subparser.add_argument("-u", "--unalias", help = "unalias", action='store_true',  default=False)
+     subparser.add_argument("slice_name", help = "slice name or id")
+
+     #dns
+     subparser = subparsers.add_parser('dns', help=dns.__doc__)
+     subparser.set_defaults(func=dns )
+     subparser.add_argument("-s", "--subdomain", help = "subdomian", default='fabric.cmbs4.org')
+     subparser.add_argument("-i", "--id", help = "slice is an ID, not a name", action='store_true',  default=False)
      subparser.add_argument("slice_name", help = "slice name or id")
      
 

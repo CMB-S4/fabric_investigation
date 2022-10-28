@@ -134,6 +134,7 @@ class CfSlice(CfFabric_Base):
           #
           # submit -- relalize these resources in fabric..
           #
+          import pdb; pdb.set_trace()
           time.sleep(self.delay) #addtional settling time
           t0 = time.time()
           logging.info(f"submitting slice {self.name}")
@@ -238,7 +239,6 @@ class CfNode(CfFabric_Base):
           node.set_capacities(cores=self.cores, ram=self.ram, disk=self.disk)
           node.set_image(self.image)
           for index, cfnic  in  enumerate(self.cfnics):
-               #import pdb; pdb.set_trace()
                node.add_component(model=cfnic.model, name=cfnic.name).get_interfaces()[index]
                cfnic.interface_index = index
 
@@ -277,7 +277,7 @@ class CfL3Network(CfFabric_Base):
      image  - Operating system image to load on node
      
      Kwargs:
-     None yets (type == IPV$, IPV6 envisioned.
+     None yets (type == IPV4, IPV6 envisioned.
      """
      
      def __init__(self, cfslice, name, **kwargs):
@@ -287,19 +287,21 @@ class CfL3Network(CfFabric_Base):
           self.cfnics = []
           self.subnet = None
           self.gateway = None
+          self.type = kwargs.get("type" , "IPv4")
           self.cfslice.register_cfnetwork(self)
           self.available_ips  = []
 
      def declare(self):
           """ declare network and interfaces on network """
           logging.info(f"creating L3 network {self.name}")
+          import pdb; pdb.set_trace()
           slice = self.cfslice.slice
           interfaces = [cfnic.get_interface() for cfnic in self.cfnics]
           network = slice.add_l3network(name=self.name, interfaces=interfaces, type='IPv4')
           
      def get_network(self):
           """
-          Return a valid node object. Each call returns
+          Return a valid network object. Each call returns
           a new FABRIC python object, which acts on the
           same underlying FABRIC network.
           """
@@ -317,6 +319,7 @@ class CfL3Network(CfFabric_Base):
           self.subnet         = network.get_subnet()
           self.gateway        = network.get_gateway()
           # flatten generator to list.
+          import pdb; pdb.set_trace()
           for h in self.subnet.hosts() : self.available_ips.append(h)
           self.available_ips.pop(0) # The gateway, is given, too remove it.
           logging.info(f"network,subnet,gateway,1st IP: {self.name},{self.subnet},{self.gateway},{self.available_ips[0]}...")

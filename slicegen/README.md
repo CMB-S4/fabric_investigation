@@ -151,9 +151,14 @@ positional arguments:
                         The node is named by its name as known to fabric.
     debug               Call a slice into memory and start the debugger
     slices              Print the name of all my slices
-    sites               Print the list of FABRIC resouroces at each site.
-    health              test topology health by having each node ping all the others
-    
+    sites               Print the list of FABRIC resources at each site.
+    health              Test topology health by having each node ping all the others
+    aliases             Print out alias for ssh commands to each node. Note that
+                        FABRIC nodes with IPV6 addresses cannot be reached from
+                        sites not supporting IPV6. "-u" prints correponding
+                        unalias commands.
+    dns                 Setup /etc/hosts so all node can addess all others by name.
+                        These names can be made up and don't leak out of FABRIC    
 optional arguments:
   -h, --help            show this help message and exit
   --loglevel LOGLEVEL, -l LOGLEVEL
