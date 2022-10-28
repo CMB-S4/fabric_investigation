@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """ collection of objects that provides resources in FABRIC for
 CMB-S4 Phase one testing.
 

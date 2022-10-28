@@ -9,11 +9,12 @@ import argparse
 import logging
 from pprint import *
 from fabrictestbed_extensions.fablib.fablib import fablib
+import pdb
 
 #
 # Utilities
 #
-def remove_py(string):
+def as_stem(string):
      # our convention is that slices and modules
      # are named but file name completeion in the
      # shell makes it easy to submit the a  name
@@ -34,7 +35,7 @@ def get_slice(args):
      if args.id:
           slice = fablib.get_slice(slice_id=args.slice_name)
      else:
-          name = remove_py(args.slice_name)
+          name = as_stem(args.slice_name)
           try:     
                slice = fablib.get_slice(name)
           except IndexError:
@@ -45,8 +46,8 @@ def get_slice(args):
 class Digest:
      "provide interfaces to digest file" 
      def __init__(self, slice_name):
-          self.slice_name = slice_name
-          with open (slice_name + ".digest") as f : lines = f.read()
+          self.slice_name = as_stem(slice_name)
+          with open (self.slice_name + ".digest") as f : lines = f.read()
           
           #format is node<blank>ip-address\n
           lines = lines.split("\n")
@@ -68,13 +69,13 @@ class Digest:
     
 def plan(args):
      "show plan, but do not call FABRIC APIs "
-     configuration = remove_py(args.configuration)
+     configuration = as_stem(args.configuration)
      exec ("import {}".format(configuration))
      exec ("{}.plan()".format(configuration))
 
 def apply(args):
      "instantiate the plan by calling FABRIC APIs"
-     configuration = remove_py(args.configuration)
+     configuration = as_stem(args.configuration)
      import importlib
      importlib.invalidate_caches()
      #module = importlib.import_module(args.configuration, package=None)
@@ -89,7 +90,7 @@ def delete(args):
 
 def _print(args):
      "Print information about nodes and networks in a slice"
-     slice_name = remove_py(args.slice_name)
+     slice_name = as_stem(args.slice_name)
      slice = get_slice(args)
      print (f"{slice}")
      for node in slice.get_nodes():
@@ -249,9 +250,9 @@ def dns(args):
           this_node = slice.get_node(this_name)
           for name, ip in digest.get_names_ips():
                if name == this_name: continue
-               cmd = f"echo '{ip} {name}.{subdomain}' >> /etc/hosts"
-               logging.info(f"executng {cmd} on {this_name}") 
-               node.exectute(cmd)
+               cmd = f"sudo bash -c 'echo {ip} {name}.{subdomain} >> /etc/hosts'"
+               logging.info(f"executing {cmd} on {this_name}") 
+               slice.get_node(this_name).execute(cmd)
 
 if __name__ == "__main__":
 
