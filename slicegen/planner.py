@@ -39,9 +39,28 @@ def get_slice(args):
           try:     
                slice = fablib.get_slice(name)
           except IndexError:
-               logging.error(f"slice {name} does not exist")
+               args.logger.error(f"slice {name} does not exist")
                exit(1)
      return slice
+
+def get_logger(args):
+     import logging
+     import sys
+     logger = logging.getLogger(sys.argv[0])
+     loglevel=logging.__dict__[args.loglevel]
+     assert type(loglevel) == type(1)
+     logger.setLevel(level=loglevel)
+     ch = logging.StreamHandler()
+     ch.setLevel(level=loglevel)
+     formatter = logging.Formatter('%(levelname)s:%(name)s:%(message)s')
+     ch.setFormatter(formatter)
+     logger.addHandler(ch)
+     #logger.debug('debug message')
+     #logger.info('info message')
+     #logger.warning('warn message')
+     #logger.error('error message')
+     #logger.critical('critical message')
+     return logger
 
 class Digest:
      "provide interfaces to digest file" 
@@ -55,13 +74,13 @@ class Digest:
           lines = lines[:-1]
           self.names = [l[0] for l in lines]
           self.ips   = [l[1] for l in lines]
-          logging.info(f"Digest file: {self.names}, {self.ips}")
+          args.logger.info(f"Digest file: {self.names}, {self.ips}")
 
      def get_names(self): return self.names
 
      def get_ips(self): return self.ips
 
-     def get_names_ips(self) : return zip(*[self.names, self.ips])
+     def get_names_ips(self) : return [z for z in zip(*[self.names, self.ips])]
 
 #
 #  end of utilities, beginning of command implementations
@@ -85,7 +104,7 @@ def apply(args):
 def delete(args):
      "delete a slice, if it exists"
      slice = get_slice(args)
-     logging.info(f"about to delete slica named {args.slice_name}")
+     args.logger.info(f"about to delete slica named {args.slice_name}")
      slice.delete()
 
 def _print(args):
@@ -128,7 +147,7 @@ def _json(args):
      if "." not in args.file : args.file = args.file + ".json"
      with open(args.file, 'w') as jfile:
           jfile.write(out)
-     logging.info(f"wrote {args.file}") 
+     args.logger.info(f"wrote {args.file}") 
      
 def mass_execute(args):
      """
@@ -145,10 +164,12 @@ def mass_execute(args):
      abbreviated_cmd = shorten(cmd)
      if len(cmd) > 40 : abbreviated_cmd = f"{cmd[:20]}...{cmd[-20:]}"
      for node in slice.get_nodes():
-          logging.info(f"{node.get_name()} : {abbreviated_cmd}")
-          stdout, stderr = node.execute(cmd)
-          print (f"{node.get_name()} stdout: {stdout}")
-          if stderr: logging.info( f"{node.get_name()} : stderr:{stderr}")
+          args.logger.info(f"{node.get_name()} : {abbreviated_cmd}")
+          print (f"{node.get_name()}")
+          stdout, stderr = node.execute(cmd) # prints stdout (at least)
+          print ()
+          #print (f"{node.get_name()} stdout: {stdout}")
+          if stderr: args.logger.info( f"{node.get_name()} : stderr:{stderr}")
      
 def execute(args):
      "execute a command(s) on a specfic node"
@@ -158,7 +179,7 @@ def execute(args):
      if cmd[0] == "@" : cmd = open(cmd[1:],"r").read()
      stdout, stderr = node.execute(cmd)
      print (f"{stdout}")
-     if stderr: logging.warn(f"stderr:{stderr}")
+     if stderr: args.logger.warn(f"stderr:{stderr}")
      
 
 def health(args):
@@ -167,26 +188,28 @@ def health(args):
      slice_name  = slice.get_name()
      digest = Digest(slice_name)
      n_errors = 0
-     ips = digest.get_ips()
-     for node_name in digest.get_names():
-          cmds = [f"ping -c 2 {ip} > /dev/null ; echo $?" for ip in ips]
+     names_ips  = digest.get_names_ips()
+     all_names = digest.get_names()
+     args.logger.info(f"Node names:{all_names}")
+     for this_name in all_names:
+          cmds = [f"ping -c 2 {ip} > /dev/null ; echo $? # to {name}" for name, ip in names_ips]
           for cmd in cmds:
-               logging.debug (f"{node_name} : {cmd}")
+               args.logger.info (f"trying on {this_name} : {cmd}")
                try:
-                    (stdout, stderr) = slice.get_node(node_name).execute(f"{cmd}")
+                    (stdout, stderr) = slice.get_node(this_name).execute(f"{cmd}")
                except Exception as e:
-                    logging.error("Exception", e)
-                    print (f"{node_name} broken {e.args}")
+                    args.logger.error("Exception", e)
+                    print (f"{this_name} BROKEN {e.args}")
                     n_errors = n_errors + 1
                else:
-                    logging.debug (f"{node_name} stdout: {stdout}") 
-                    logging.debug (f"{node_name} stderr: {stderr}") 
+                    args.logger.debug (f"{this_name} stdout: {stdout}") 
+                    args.logger.debug (f"{this_name} stderr: {stderr}") 
                     if stdout == "0\n" :
                          status = "healthy"
                     else:
-                         status = "broken "
+                         status = "BROKEN "
                          n_errors = n_errors + 1
-               print (f"{node_name} {status} {cmd}")
+               print (f"{this_name} {status} {cmd}")
      exit(n_errors)                 
      
 def template(args):
@@ -205,7 +228,7 @@ def slices(args):
 def resources(args):
      "experimental -- take a peek at resources"
      #import pdb; pdb.set_trace()
-     print(fablib.list_sites())
+     print(f"{fablib.list_sites()}")
 
 def aliases (args):
      """
@@ -231,7 +254,7 @@ def aliases (args):
           slice = get_slice(args)
           names  = [node.get_name() for node in slice.get_nodes()]
      except:
-          logging.info("slice is gone, seeing if there is a digest")     
+          args.logger.info("slice is gone, seeing if there is a digest")     
      if not names:
           digest = Digest(args.slice_name)
           names = [name for name in digest.get_names()]
@@ -251,8 +274,19 @@ def dns(args):
           for name, ip in digest.get_names_ips():
                if name == this_name: continue
                cmd = f"sudo bash -c 'echo {ip} {name}.{subdomain} >> /etc/hosts'"
-               logging.info(f"executing {cmd} on {this_name}") 
+               args.logger.info(f"executing {cmd} on {this_name}") 
                slice.get_node(this_name).execute(cmd)
+
+def addr_show(args):
+     """
+     get low level status from all nodes
+     """
+     slice = get_slice(args)
+     digest = Digest(args.slice_name)
+     for name in digest.get_names():
+          node = slice.get_node(name)
+          stdout, stderr = node.execute("/usr.sbin/ip addr show")
+          print (f"{name} {stdout}")
 
 if __name__ == "__main__":
 
@@ -347,16 +381,11 @@ if __name__ == "__main__":
      subparser.add_argument("-s", "--subdomain", help = "subdomian", default='fabric.cmbs4.org')
      subparser.add_argument("-i", "--id", help = "slice is an ID, not a name", action='store_true',  default=False)
      subparser.add_argument("slice_name", help = "slice name or id")
-     
 
      args = parser.parse_args()
+     args.logger = get_logger(args)
+     
 
-     # translate text arguement to log level.
-     # least to most verbose FATAL WARN INFO DEBUG
-     # level also printst things to the left of it. 
-     loglevel=logging.__dict__[args.loglevel]
-     assert type(loglevel) == type(1)
-     logging.basicConfig(level=logging.__dict__[args.loglevel])
-     logging.info("args:{}".format(args))
-     args.parser = parser
+     args.logger.info("args:{}".format(args))
+     args.parser = parser  #for help printer
      args.func(args)

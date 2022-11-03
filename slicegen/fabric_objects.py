@@ -63,7 +63,7 @@ class CfFabric_Base:
      A base class for all objects in config file
      """
      scalar_types = [type(1),type(None),type(True),type(""), type(1.0) ]
-          
+     logger   = None  
      def show(self):
           items = vars(self)
           print (items["name"])
@@ -77,7 +77,12 @@ class CfFabric_Base:
                     print("\t{} {}".format(key, value.keys()))
                else:
                     print("\t{} {}".format(key, value))
-
+                    
+     def get_logger(self):
+          import sys
+          if  not CfFabric_Base.logger:
+               CfFabric_Base.logger = logging.getLogger(sys.argv[0])
+          return CfFabric_Base.logger
      
 class CfSlice(CfFabric_Base):
      """
@@ -121,7 +126,7 @@ class CfSlice(CfFabric_Base):
         
      def apply(self):
           """ cause the slice to be realized """
-          logging.info(f"instatiate clice {self.name}")       
+          self.get_logger().info(f"instatiate clice {self.name}")       
           self.slice = fablib.new_slice(name=self.name)
 
           #
@@ -137,15 +142,25 @@ class CfSlice(CfFabric_Base):
           #
           time.sleep(self.delay) #addtional settling time
           t0 = time.time()
-          logging.info(f"submitting slice {self.name}")
+          self.get_logger().info(f"submitting slice {self.name}")
           self.slice.submit()
           duration = time.time() - t0
-          logging.info(f"submit complete in {duration} seconds")
+          self.get_logger().info(f"submit complete in {duration} seconds")
 
           #
           # Configure -- configure the realized resoruces
-          # networks first.
-          
+          # networks first. But for a quirk in fabric, reboot the nodes
+          # before configuring networks, and wait for the nodes to come up
+          self.get_logger().info(f"beginning reboot and wait")
+          t0 = time.time()
+          for cfnode in self.registered_cfnodes:       cfnode.reboot()
+          time.sleep(240)
+          self.slice = fablib.get_slice(self.name) 
+          for cfnode in self.registered_cfnodes:       cfnode.wait_reboot()
+          elapsed = (time.time() - t0)
+          self.get_logger().info(f"reboot phase over: {elapsed} seconds")
+
+          #now setup networks + internal DNS.
           for cfnetwork in self.registered_cfnetworks: cfnetwork.configure()
           for cfnode in self.registered_cfnodes:       cfnode.configure()
           for cfcmd     in self.registered_cfcmds:     cfcmd.configure()
@@ -184,7 +199,7 @@ class CfSlice(CfFabric_Base):
                     #log it
                     node_name = node.get_name()
                     net_name  = a_cfnic.get_network().get_name()
-                    logging.info(f"routing node {node_name} to network {net_name}"
+                    self.get_logger().info(f"routing node {node_name} to network {net_name}"
                                  )
           with open(f"{self.name}.digest","w") as f:
                for cfnic in self.registered_cfnics:
@@ -232,7 +247,7 @@ class CfNode(CfFabric_Base):
           """
           get a node of required capacity; attach NICS
           """
-          logging.info(f"creating node {self.name}")
+          self.get_logger().info(f"declaring  node {self.name}")
           slice = self.cfslice.slice
           node = slice.add_node(name=self.name, site=self.site)
           self._declate_node = node
@@ -247,13 +262,14 @@ class CfNode(CfFabric_Base):
           """
           Bind NICS to network. Bind IPaddress to Nic. 
           """
+          # e,g self.get_node().execute("date")
           for cfnic in self.cfnics:
                #nodes
                interface = cfnic.get_interface()
-               self.dev = interface.get_os_interface()
+               self.dev  = interface.get_os_interface()
                cfnic.ip  = cfnic.cfnetwork.get_next_ip()
                interface.ip_addr_add(addr=cfnic.ip, subnet=cfnic.get_network().get_subnet())
-               logging.info (f'{self.site}.{self.name}.{cfnic.ip}')
+               self.get_logger().info (f'{self.site}.{self.name}.{cfnic.ip}')
                
      def register_cfnic(self, nic):
           """
@@ -267,7 +283,32 @@ class CfNode(CfFabric_Base):
           """
           self.show()
 
-               
+     def reboot(self):
+          """
+          Reboot the node
+          """
+          self.get_logger().info(f"rebooting {self.name}")
+          (stdout, stderr) = self.get_node().execute("sudo reboot")
+          print ("reboot: stdout, sterr:", stdout, stderr)
+          
+     def wait_reboot(self):
+          """ 
+          a successful command assured that the node has rebooted
+          """
+          self.get_logger().info(f"waiting complets reboot of  {self.name}")
+          t0 = time.time()
+          for retry in range(5):
+               stdout, stdin = self.get_node().execute("systemctl is-system-running")
+               # either of the answer below indicate that systemd  as finished ...
+               # starting stuff The hope is the nodes are not stable. 
+               if "degraded" in stdout : break  # normal successful path when developng this.
+               if "running"  in stdout : break  # ideal, but not observed
+               time.sleep(20)
+          elapsed = int(time.time() - t0)
+          self.get_logger().info(
+               f"{self.name} is up elapsed time for check: {elapsed}, is-system-running: {stdout}"
+          )
+          
 class CfL3Network(CfFabric_Base):
      """
      Create a IPV4 L3 network.
@@ -293,7 +334,7 @@ class CfL3Network(CfFabric_Base):
 
      def declare(self):
           """ declare network and interfaces on network """
-          logging.info(f"creating L3 network {self.name}")
+          self.get_logger().info(f"declaring L3 network {self.name}")
           slice = self.cfslice.slice
           interfaces = [cfnic.get_interface() for cfnic in self.cfnics]
           network = slice.add_l3network(name=self.name, interfaces=interfaces, type='IPv4')
@@ -320,8 +361,8 @@ class CfL3Network(CfFabric_Base):
           # flatten generator to list.
           for h in self.subnet.hosts() : self.available_ips.append(h)
           self.available_ips.pop(0) # The gateway, is given, too remove it.
-          logging.info(f"network,subnet,gateway,1st IP: {self.name},{self.subnet},{self.gateway},{self.available_ips[0]}...")
-          pass
+          self.get_logger().info(f"network,subnet,gateway,1st IP: {self.name},{self.subnet},{self.gateway},{self.available_ips[0]}...")
+          pass\
      
      def get_next_ip(self):
           """ Get the next available IP """
@@ -363,7 +404,7 @@ class CfL2Network(CfFabric_Base):
           self.cfslice.register_cfnetwork(self)
     
      def declare(self):
-          logging.info(f"creating L2 network {self.name}")
+          self.get_logger().info(f"creating L2 network {self.name}")
           slice = self.cfslice.slice
           interfaces = [n.interface for n in self.nics]
           self.network = slice.add_l2network(name=self.name, interfaces=interfaces)
