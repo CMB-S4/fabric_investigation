@@ -194,9 +194,9 @@ def health(args):
      for this_name in all_names:
           cmds = [f"ping -c 2 {ip} > /dev/null ; echo $? # to {name}" for name, ip in names_ips]
           for cmd in cmds:
-               args.logger.info (f"trying on {this_name} : {cmd}")
+               args.logger.debug (f"trying on {this_name} : {cmd}")
                try:
-                    (stdout, stderr) = slice.get_node(this_name).execute(f"{cmd}")
+                    (stdout, stderr) = slice.get_node(this_name).execute(f"{cmd}", quiet=True)
                except Exception as e:
                     args.logger.error("Exception", e)
                     print (f"{this_name} BROKEN {e.args}")

@@ -147,20 +147,23 @@ class CfSlice(CfFabric_Base):
           duration = time.time() - t0
           self.get_logger().info(f"submit complete in {duration} seconds")
 
+
+          #
+          # Deal with a problem ni rocky linux, per forum reply from
+          # Ilya, and mail from Greg Nov 4 2022.
+          self.get_logger().info(f"beginning rocky linux network problem work around")
+          for node in self.slice.get_nodes():
+               node.network_manager_start()    
+          for iface in self.slice.get_interfaces():
+             iface.get_node().execute(f'sudo nmcli device set {iface.get_device_name()} managed no')   
+          self.get_logger().info(f"end rocky linux network problem work around")
+
+
           #
           # Configure -- configure the realized resoruces
           # networks first. But for a quirk in fabric, reboot the nodes
           # before configuring networks, and wait for the nodes to come up
-          self.get_logger().info(f"beginning reboot and wait")
-          t0 = time.time()
-          for cfnode in self.registered_cfnodes:       cfnode.reboot()
-          time.sleep(240)
-          self.slice = fablib.get_slice(self.name) 
-          for cfnode in self.registered_cfnodes:       cfnode.wait_reboot()
-          elapsed = (time.time() - t0)
-          self.get_logger().info(f"reboot phase over: {elapsed} seconds")
-
-          #now setup networks + internal DNS.
+          # now setup networks. to the IP level.
           for cfnetwork in self.registered_cfnetworks: cfnetwork.configure()
           for cfnode in self.registered_cfnodes:       cfnode.configure()
           for cfcmd     in self.registered_cfcmds:     cfcmd.configure()
