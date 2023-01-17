@@ -228,7 +228,12 @@ def slices(args):
 def resources(args):
      "experimental -- take a peek at resources"
      #import pdb; pdb.set_trace()
-     print(f"{fablib.list_sites()}")
+     manager = fablib.get_default_fablib_manager()
+     if args.all :
+          print(manager.list_sites())
+     else:
+          fields = ['Name', 'Hosts', 'CPUs', 'Cores Capacity','Cores Available']
+          print(manager.list_sites(fields=fields, quiet=True))
 
 def aliases (args):
      """
@@ -360,6 +365,9 @@ if __name__ == "__main__":
 
      #resources
      subparser = subparsers.add_parser('resources', help=resources.__doc__)
+     subparser.add_argument("-a", "--all",
+                            help = "print all (e.g too many)resources",
+                            action='store_true',  default=False)
      subparser.set_defaults(func=resources)
 
      #health
