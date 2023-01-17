@@ -164,6 +164,7 @@ class CfSlice(CfFabric_Base):
           # networks first. But for a quirk in fabric, reboot the nodes
           # before configuring networks, and wait for the nodes to come up
           # now setup networks. to the IP level.
+          import pdb; pdb.set_trace()
           for cfnetwork in self.registered_cfnetworks: cfnetwork.configure()
           for cfnode in self.registered_cfnodes:       cfnode.configure()
           for cfcmd     in self.registered_cfcmds:     cfcmd.configure()

@@ -293,6 +293,19 @@ def addr_show(args):
           stdout, stderr = node.execute("/usr.sbin/ip addr show")
           print (f"{name} {stdout}")
 
+def renew(args):
+     """
+     renew a slice so it sticks around 
+     """
+     import datetime 
+     now = datetime.datetime.now(datetime.timezone.utc)
+     duration = args.days
+     end_date = (now + datetime.timedelta(duration)).strftime("%Y-%m-%d %H:%M:%S %z")
+     slice = get_slice(args)
+     slice.renew(end_date)
+     new_end_date = slice.get_lease_end()
+     args.logger.info(f"lease end is now {new_end_date}")
+
 if __name__ == "__main__":
 
     #main_parser = argparse.ArgumentParser(add_help=False)
@@ -306,29 +319,29 @@ if __name__ == "__main__":
    
      subparsers = parser.add_subparsers()   
  
-     #list but not execute. 
+     # list but not execute. 
      subparser = subparsers.add_parser('plan', help=plan.__doc__)
      subparser.set_defaults(func=plan)
      subparser.add_argument("configuration", help = "configuration file")
 
-     #instanitate
+     # instanitate
      subparser = subparsers.add_parser('apply', help=apply.__doc__)
      subparser.set_defaults(func=apply)
      subparser.add_argument("configuration", help = "configuration file")
 
-     #delete
+     # delete
      subparser = subparsers.add_parser('delete', help=delete.__doc__)
      subparser.set_defaults(func=delete)
      subparser.add_argument("-i", "--id", help = "slice is an ID, not a name", action='store_true',  default=False)
      subparser.add_argument("slice_name", help = "slice_name")
 
-     #print
+     # print
      subparser = subparsers.add_parser('print', help=_print.__doc__)
      subparser.set_defaults(func=_print)
      subparser.add_argument("-i", "--id", help = "slice is an ID, not a name", action='store_true',  default=False)
      subparser.add_argument("slice_name", help = "slice_name")
 
-     #_json
+     # _json
      subparser = subparsers.add_parser('json', help=_json.__doc__)
      subparser.set_defaults(func=_json)
      subparser.add_argument("slice_name", help = "slice_name")
@@ -337,14 +350,14 @@ if __name__ == "__main__":
                              help='output file Def slice_name.json',
                              default="")
 
-     #mass_execute
+     # mass_execute
      subparser = subparsers.add_parser('mass_execute', help=mass_execute.__doc__)
      subparser.set_defaults(func=mass_execute)
      subparser.add_argument("slice_name", help = "slice_name")
      subparser.add_argument("-i", "--id",  help = "slice is an ID, not a name", action='store_true',  default=False)
      subparser.add_argument("cmd", help = "command")
 
-     #execute
+     # execute
      subparser = subparsers.add_parser('execute', help=execute.__doc__)
      subparser.set_defaults(func=execute)
      subparser.add_argument("-i", "--id", help = "slice is an ID, not a name", action='store_true',  default=False)
@@ -353,42 +366,50 @@ if __name__ == "__main__":
      subparser.add_argument("cmd", help = "command")
      
 
-     #debug
+     # debug
      subparser = subparsers.add_parser('debug', help=debug.__doc__)
      subparser.set_defaults(func=debug)
      subparser.add_argument("-i", "--id", help = "slice is an ID, not a name", action='store_true',  default=False)
      subparser.add_argument("slice_name", help = "slice name or id")
 
-     #slices
+     # slices
      subparser = subparsers.add_parser('slices', help=slices.__doc__)
      subparser.set_defaults(func=slices)
 
-     #resources
+     # resources
      subparser = subparsers.add_parser('resources', help=resources.__doc__)
      subparser.add_argument("-a", "--all",
                             help = "print all (e.g too many)resources",
                             action='store_true',  default=False)
      subparser.set_defaults(func=resources)
 
-     #health
+     # health
      subparser = subparsers.add_parser('health', help=health.__doc__)
      subparser.set_defaults(func=health)
      subparser.add_argument("-i", "--id", help = "slice is an ID, not a name", action='store_true',  default=False)
      subparser.add_argument("slice_name", help = "slice name or id")
 
-     #aliases
+     # aliases
      subparser = subparsers.add_parser('aliases', help=aliases.__doc__)
      subparser.set_defaults(func=aliases )
      subparser.add_argument("-i", "--id", help = "slice is an ID, not a name", action='store_true',  default=False)
      subparser.add_argument("-u", "--unalias", help = "unalias", action='store_true',  default=False)
      subparser.add_argument("slice_name", help = "slice name or id")
 
-     #dns
+     # dns
      subparser = subparsers.add_parser('dns', help=dns.__doc__)
      subparser.set_defaults(func=dns )
      subparser.add_argument("-s", "--subdomain", help = "subdomian", default='fabric.cmbs4.org')
      subparser.add_argument("-i", "--id", help = "slice is an ID, not a name", action='store_true',  default=False)
      subparser.add_argument("slice_name", help = "slice name or id")
+
+     # renew
+     subparser = subparsers.add_parser('renew', help=renew.__doc__)
+     subparser.set_defaults(func=renew)
+     subparser.add_argument("-i", "--id", help = "slice is an ID, not a name", action='store_true',  default=False)
+     subparser.add_argument("slice_name", help = "slice name or id")
+     subparser.add_argument("-d", "--days", help = "duration in days of renewal", type=int,  default=12)
+
 
      args = parser.parse_args()
      args.logger = get_logger(args)
