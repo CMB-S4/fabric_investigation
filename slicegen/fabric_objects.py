@@ -164,7 +164,8 @@ class CfSlice(CfFabric_Base):
           # before configuring networks, and wait for the nodes to come up
           # now setup networks. to the IP level.
           print(self.slice)
-          self.slice = fablib.new_slice(name=self.name) #refresh after submit.
+          print(self.name)
+          #self.slice = fablib.new_slice(name=self.name) #refresh after submit.
           print(self.slice)
           for cfnetwork in self.registered_cfnetworks: cfnetwork.configure()
           for cfnode in self.registered_cfnodes:       cfnode.configure()
@@ -189,7 +190,7 @@ class CfSlice(CfFabric_Base):
           make a digest -- list of (network_name, subnets)
           """
  
-          self.slice = fablib.new_slice(name=self.name) #dlp
+          #self.slice = fablib.new_slice(name=self.name) #dlp
           for this_cfnic in self.registered_cfnics:
                this_node_name         = this_cfnic.get_node().get_name()
                this_network_name      = this_cfnic.get_network().get_name()

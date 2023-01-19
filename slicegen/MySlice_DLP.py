@@ -13,12 +13,12 @@ slice = CfSlice(__name__)
 
 node1 = CfNode(slice, 'CMBS4Node1', image,
                 disk=disk, cores=cores, ram=ram, site='TACC')
-net1 = CfL3Network(slice, 'net1', type='IPv6')
+net1 = CfL3Network(slice, 'net1', type='IPv4')
 
 
 node2 = CfNode(slice, 'CMBS4Node2', image,
                 disk=disk, cores=cores, ram=ram, site='NCSA')
-net2 = CfL3Network(slice, 'net2', type='IPv6')
+net2 = CfL3Network(slice, 'net2', type='IPv4')
 
 
 CfNic(slice, "Node1.NIC1", node1, net1)
