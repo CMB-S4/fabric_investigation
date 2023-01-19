@@ -26,7 +26,7 @@ network, node and nic objects. The configuration file processing
 program , *planner.py* will import the configuraaion file and cause
 the objects to be instantated.
 
-"Plan level" prints out, in human readable form, a good deal of
+apply"Plan level" prints out, in human readable form, a good deal of
 information about what would be instantiated. This output helps an
 author determine whether the configuration is what was intended, and can
 serve to document the configuration.  Planning does not allocate
@@ -113,7 +113,7 @@ class CfSlice(CfFabric_Base):
           self.registered_cfnodes.append(cfnode)
         
      def register_cfnetwork(self, cfnetwork):
-          """ rememer every cfnetwork """
+          """ remember every cfnetwork """
           self.registered_cfnetworks.append(cfnetwork)
 
      def register_cfnic(self, cfnic):
@@ -132,7 +132,6 @@ class CfSlice(CfFabric_Base):
           #
           # Make API calls to declate needed resources to FABRIC
           # Nodes first....
-          
           for cfnode    in self.registered_cfnodes:    cfnode.declare()
           for cfnetwork in self.registered_cfnetworks: cfnetwork.declare()
           for cfnic     in self.registered_cfnics:     cfnic.declare()
@@ -164,7 +163,9 @@ class CfSlice(CfFabric_Base):
           # networks first. But for a quirk in fabric, reboot the nodes
           # before configuring networks, and wait for the nodes to come up
           # now setup networks. to the IP level.
-          import pdb; pdb.set_trace()
+          print(self.slice)
+          self.slice = fablib.new_slice(name=self.name) #refresh after submit.
+          print(self.slice)
           for cfnetwork in self.registered_cfnetworks: cfnetwork.configure()
           for cfnode in self.registered_cfnodes:       cfnode.configure()
           for cfcmd     in self.registered_cfcmds:     cfcmd.configure()
@@ -188,6 +189,7 @@ class CfSlice(CfFabric_Base):
           make a digest -- list of (network_name, subnets)
           """
  
+          self.slice = fablib.new_slice(name=self.name) #dlp
           for this_cfnic in self.registered_cfnics:
                this_node_name         = this_cfnic.get_node().get_name()
                this_network_name      = this_cfnic.get_network().get_name()
@@ -327,7 +329,7 @@ class CfL3Network(CfFabric_Base):
      
      def __init__(self, cfslice, name, **kwargs):
           
-          self.cfslice = cfslice  #Slice wrapper object 
+          self.cfslice = cfslice  #Slice wrapper object # goes
           self.name = name
           self.cfnics = []
           self.subnet = None
@@ -341,7 +343,7 @@ class CfL3Network(CfFabric_Base):
           self.get_logger().info(f"declaring L3 network {self.name}")
           slice = self.cfslice.slice
           interfaces = [cfnic.get_interface() for cfnic in self.cfnics]
-          network = slice.add_l3network(name=self.name, interfaces=interfaces, type='IPv4')
+          network = slice.add_l3network(name=self.name, interfaces=interfaces, type=self.type)
           
      def get_network(self):
           """
