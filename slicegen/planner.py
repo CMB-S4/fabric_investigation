@@ -232,7 +232,7 @@ def resources(args):
      if args.all :
           print(manager.list_sites())
      else:
-          fields = ['Name', 'Hosts', 'CPUs', 'Cores Capacity','Cores Available']
+          fields = [ 'name', 'hosts', 'cpus', 'cores_capacity', 'cores_available']
           print(manager.list_sites(fields=fields, quiet=True))
 
 def aliases (args):
