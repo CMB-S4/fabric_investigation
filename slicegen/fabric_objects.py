@@ -215,7 +215,6 @@ class CfSlice(CfFabric_Base):
                w.writerow(["node_name", "node_ip", "site", "management_ip"])
                for cfnic in self.registered_cfnics:
                     node_name = cfnic.get_node().get_name()
-                    import pdb; pdb.set_trace()
                     node_ip = cfnic.ip.exploded
                     management_ip = cfnic.get_node().get_management_ip().exploded
                     site = cfnic.get_node().get_site()
