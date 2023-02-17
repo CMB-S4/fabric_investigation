@@ -10,6 +10,7 @@ import logging
 from pprint import *
 from fabrictestbed_extensions.fablib.fablib import fablib
 import pdb
+import csv
 
 #
 # Utilities
@@ -65,22 +66,30 @@ def get_logger(args):
 class Digest:
      "provide interfaces to digest file" 
      def __init__(self, slice_name):
+          import csv
           self.slice_name = as_stem(slice_name)
-          with open (self.slice_name + ".digest") as f : lines = f.read()
-          
-          #format is node<blank>ip-address\n
-          lines = lines.split("\n")
-          lines = [l.split(" ") for l in lines]
-          lines = lines[:-1]
-          self.names = [l[0] for l in lines]
-          self.ips   = [l[1] for l in lines]
-          args.logger.info(f"Digest file: {self.names}, {self.ips}")
+          self.slice_file = self.slice_name + ".digest"
+          self.items = {}
+          with open (self.slice_file) as f :
+               r = csv.reader(f)
+               all = list(zip(*r))
+               for a in all:
+                    name  = a[0]
+                    self.items[name] = a[1:]
 
-     def get_names(self): return self.names
+     def get_names(self): return self.items["node_name"]
 
-     def get_ips(self): return self.ips
+     def get_ips(self): return self.items["node_ip"]
 
-     def get_names_ips(self) : return [z for z in zip(*[self.names, self.ips])]
+     def get_sites(self): return self.items["site"]
+
+     def get_management_ips(self): return self.items["managment_ip"]
+
+     def get_names_ips_sites(self) : return [z for z in zip(*[
+               self.items["node_name"],
+               self.items["node_ip"],
+               self.items["site"]])
+     ]
 
 #
 #  end of utilities, beginning of command implementations
@@ -188,13 +197,11 @@ def health(args):
      slice_name  = slice.get_name()
      digest = Digest(slice_name)
      n_errors = 0
-     names_ips  = digest.get_names_ips()
-     all_names = digest.get_names()
-     args.logger.info(f"Node names:{all_names}")
-     for this_name in all_names:
-          cmds = [f"ping -c 2 {ip} > /dev/null ; echo $? # to {name}" for name, ip in names_ips]
-          for cmd in cmds:
-               args.logger.debug (f"trying on {this_name} : {cmd}")
+     for this_name, this_ip, this_site  in digest.get_names_ips_sites():
+          for other_name, other_ip, other_site in digest.get_names_ips_sites():
+               if other_name == this_name : continue
+               cmd = f"ping -c 2 {other_ip} > /dev/null ; echo $? # ping from {this_ip}"
+               args.logger.debug (f"trying on {this_name}, {this_site}  : {cmd}")
                try:
                     (stdout, stderr) = slice.get_node(this_name).execute(f"{cmd}", quiet=True)
                except Exception as e:
@@ -209,7 +216,7 @@ def health(args):
                     else:
                          status = "BROKEN "
                          n_errors = n_errors + 1
-               print (f"{this_name} {status} {cmd}")
+               print (f"{status}:{this_site}.{this_name} --ping-> {other_site}.{other_name}  {cmd}")
      exit(n_errors)                 
      
 def template(args):
@@ -276,7 +283,7 @@ def dns(args):
      subdomain = args.subdomain
      for this_name in digest.get_names():
           this_node = slice.get_node(this_name)
-          for name, ip in digest.get_names_ips():
+          for name, ip, site in digest.get_names_ips_sites():
                if name == this_name: continue
                cmd = f"sudo bash -c 'echo {ip} {name}.{subdomain} >> /etc/hosts'"
                args.logger.info(f"executing {cmd} on {this_name}") 

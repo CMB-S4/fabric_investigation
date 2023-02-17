@@ -53,6 +53,7 @@ from fabrictestbed_extensions.fablib.fablib import fablib
 from ipaddress import ip_address, IPv4Address, IPv6Address, IPv4Network, IPv6Network
 import time
 import logging
+import csv
 
 from fabrictestbed_extensions.fablib.fablib import FablibManager as fablib_manager
 fablib = fablib_manager()             
@@ -206,13 +207,19 @@ class CfSlice(CfFabric_Base):
                     #log it
                     node_name = node.get_name()
                     net_name  = a_cfnic.get_network().get_name()
-                    self.get_logger().info(f"routing node {node_name} to network {net_name}"
-                                 )
-          with open(f"{self.name}.digest","w") as f:
+                    self.get_logger().info(f"routing node {node_name} to network {net_name}")
+                    
+          # write digest file 
+          with open(f"{self.name}.digest","w") as csvfile:
+               w = csv.writer(csvfile)
+               w.writerow(["node_name", "node_ip", "site", "management_ip"])
                for cfnic in self.registered_cfnics:
                     node_name = cfnic.get_node().get_name()
-                    ip_address = cfnic.ip
-                    f.write(f"{node_name} {ip_address}\n")
+                    import pdb; pdb.set_trace()
+                    node_ip = cfnic.ip.exploded
+                    management_ip = cfnic.get_node().get_management_ip().exploded
+                    site = cfnic.get_node().get_site()
+                    w.writerow([node_name, node_ip,site, management_ip])
 
 
 class CfNode(CfFabric_Base):
