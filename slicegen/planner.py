@@ -4,7 +4,6 @@
 Plan and provision resources in FABRIC.
 
 """
-
 import argparse
 import logging
 from pprint import *

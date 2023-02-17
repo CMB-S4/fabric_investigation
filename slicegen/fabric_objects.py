@@ -108,6 +108,7 @@ class CfSlice(CfFabric_Base):
           self.registered_cfcmds     = []
           self.delay = 4
           if "delay"  in kwargs :  self.delay  = kwargs["delay"]
+          self.rocky_linux_workaround = kwargs.setdefault("rocky_linux_workaround", True)
         
      def register_cfnode(self, cfnode):
           """ remember every cfnode """
@@ -151,13 +152,15 @@ class CfSlice(CfFabric_Base):
           #
           # Deal with a problem ni rocky linux, per forum reply from
           # Ilya, and mail from Greg Nov 4 2022.
-          self.get_logger().info(f"beginning rocky linux network problem work around")
-          for node in self.slice.get_nodes():
-               node.network_manager_start()    
-          for iface in self.slice.get_interfaces():
-             iface.get_node().execute(f'sudo nmcli device set {iface.get_device_name()} managed no')   
-          self.get_logger().info(f"end rocky linux network problem work around")
-
+          if self.rocky_linux_workaround:
+               self.get_logger().info(f"beginning rocky linux network problem work around")
+               for node in self.slice.get_nodes():
+                    node.network_manager_start()    
+                    for iface in self.slice.get_interfaces():
+                         iface.get_node().execute(f'sudo nmcli device set {iface.get_device_name()} managed no')   
+               self.get_logger().info(f"end rocky linux network problem work around")
+          else:
+               self.get_logger().info(f"rocky linux work around configure out")
 
           #
           # Configure -- configure the realized resoruces
