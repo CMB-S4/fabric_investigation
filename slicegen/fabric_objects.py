@@ -211,17 +211,19 @@ class CfSlice(CfFabric_Base):
                     node_name = node.get_name()
                     net_name  = a_cfnic.get_network().get_name()
                     self.get_logger().info(f"routing node {node_name} to network {net_name}")
+
                     
           # write digest file 
           with open(f"{self.name}.digest","w") as csvfile:
                w = csv.writer(csvfile)
-               w.writerow(["node_name", "node_ip", "site", "management_ip"])
+               w.writerow(["node_name", "node_ip", "site", "management_ip", "storage"])
                for cfnic in self.registered_cfnics:
                     node_name = cfnic.get_node().get_name()
                     node_ip = cfnic.ip.exploded
                     management_ip = cfnic.get_node().get_management_ip().exploded
                     site = cfnic.get_node().get_site()
-                    w.writerow([node_name, node_ip,site, management_ip])
+                    storage = cfnic.cfnode.storage_name
+                    w.writerow([node_name, node_ip,site, management_ip, storage])
 
 
 class CfNode(CfFabric_Base):
@@ -237,16 +239,18 @@ class CfNode(CfFabric_Base):
      - ram   -- GB of ram for the node   (def 40)
      - disk  -- GB of Disk for the node  (def 100)
      - site  -- FABRIC site for the node.(def NCSA)
+     - storage -- name of FABRIC-provided external prsistent storage  (Def None)
      """
      
      def __init__ (self, cfslice, name, image, **kwargs):
           self.cfslice = cfslice  #Slice wrapper object 
-          self.name  = name
-          self.image = image
-          self.site  = kwargs.get("site"  , "NCSA")
-          self.cores = kwargs.get("cores" , 20)
-          self.ram   = kwargs.get("ram"   , 40)
-          self.disk  = kwargs.get("disk" , 100)
+          self.name    = name
+          self.image   = image
+          self.site    = kwargs.get("site"  , "NCSA")
+          self.cores   = kwargs.get("cores" , 20)
+          self.ram     = kwargs.get("ram"   , 40)
+          self.disk    = kwargs.get("disk" , 100)
+          self.storage_name = kwargs.get("storage" , None)
           self.cfnics  = []
           self.cfslice.register_cfnode(self)
 
@@ -261,12 +265,14 @@ class CfNode(CfFabric_Base):
      
      def declare(self):
           """
-          get a node of required capacity; attach NICS
+          get a node of required capacity; attach NICS, storage
           """
           self.get_logger().info(f"declaring  node {self.name}")
           slice = self.cfslice.slice
           node = slice.add_node(name=self.name, site=self.site)
           self._declate_node = node
+          if self.storage_name: node.add_storage(self.storage_name)
+
           node.set_capacities(cores=self.cores, ram=self.ram, disk=self.disk)
           node.set_image(self.image)
           for index, cfnic  in  enumerate(self.cfnics):
@@ -277,6 +283,7 @@ class CfNode(CfFabric_Base):
      def configure(self):
           """
           Bind NICS to network. Bind IPaddress to Nic. 
+          get storage and mount it
           """
           # e,g self.get_node().execute("date")
           for cfnic in self.cfnics:
@@ -286,6 +293,21 @@ class CfNode(CfFabric_Base):
                cfnic.ip  = cfnic.cfnetwork.get_next_ip()
                interface.ip_addr_add(addr=cfnic.ip, subnet=cfnic.get_network().get_subnet())
                self.get_logger().info (f'{self.site}.{self.name}.{cfnic.ip}')
+
+          if self.storage_name:
+               # get logger and log
+               storage = self.get_node().get_storage(self.storage_name)
+               print(f"Storage Device Name: {storage.get_device_name()}")
+               #stdout,stderr = self.get_node().execute("sudo mkfs.ext4 {storage.get_device_name()}")
+               stdout,stderr = self.get_node().execute(f"sudo mkdir /mnt/fabric_storage; "
+                                 f"sudo mount {storage.get_device_name()} /mnt/fabric_storage; "
+                                 )
+
+               self.cfslice.logger.debug(stdout)
+               if stderr: 
+                    self.cfslice.logger.error("stderr: {stderr}")
+                    exit(1)
+ 
                
      def register_cfnic(self, nic):
           """
