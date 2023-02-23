@@ -10,6 +10,7 @@ from pprint import *
 from fabrictestbed_extensions.fablib.fablib import fablib
 import pdb
 import csv
+import time
 
 #
 # Utilities
@@ -312,6 +313,35 @@ def renew(args):
      new_end_date = slice.get_lease_end()
      args.logger.info(f"lease end is now {new_end_date}")
 
+def format(args):
+    """
+    format fabric-provided storage at a site.
+    """
+    if args.force_yes:
+         reply = input("confirm by entering 'format' > ")
+         if reply.strip() != 'format':
+              print(f"not confirmed, {reply}")
+              exit(1)
+    slice_name = "temp_slice_for_format"
+    slice = fablib.new_slice(name=slice_name)
+    node = slice.add_node(name="temp-reformat-worker", site=args.site)
+    node.set_capacities(cores=4, ram=16, disk=100)
+    node.add_storage(args.storage)
+    args.logger.info(f"submitting temp slice")
+    slice.submit()
+
+    node=slice.get_node("temp-reformat-worker")
+    storage = node.get_storage(args.storage)
+    cmd = f"sudo mkfs.ext4 {storage.get_device_name()}"
+    print (f"would execute {cmd} on {node.get_name()} and {node.get_site()}")
+    stdout,stderr = node.execute(cmd)
+    args.logger.info(f"command finished")
+    args.logger.info(f"stdout: {stdout}")
+    args.logger.info(f"stderr: {stderr}")
+    slice.delete()
+    if stderr : exit(1)  
+
+    
 if __name__ == "__main__":
 
     #main_parser = argparse.ArgumentParser(add_help=False)
@@ -415,6 +445,14 @@ if __name__ == "__main__":
      subparser.add_argument("-i", "--id", help = "slice is an ID, not a name", action='store_true',  default=False)
      subparser.add_argument("slice_name", help = "slice name or id")
      subparser.add_argument("-d", "--days", help = "duration in days of renewal", type=int,  default=12)
+
+
+     # format
+     subparser = subparsers.add_parser('format', help=format.__doc__)
+     subparser.set_defaults(func=format)
+     subparser.add_argument("site", help = "site having the storage")
+     subparser.add_argument("storage", help = "Name of the fabric-provided storage")
+     subparser.add_argument("-f", "--force_yes", help = "avoid confirming prompt", default=True, action='store_false')
 
 
      args = parser.parse_args()

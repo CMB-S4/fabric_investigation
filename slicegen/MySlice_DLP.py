@@ -9,10 +9,10 @@ ram = 128
 disk = 100
 
 
-slice = CfSlice(__name__)
+slice = CfSlice(__name__, rocky_linux_workaround=False)
 
 node1 = CfNode(slice, 'CMBS4Node1', image,
-                disk=disk, cores=cores, ram=ram, site='TACC')
+                disk=disk, cores=cores, ram=ram, site='TACC', storage="CMB-S4-phase-one")
 net1 = CfL3Network(slice, 'net1', type='IPv4')
 
 
