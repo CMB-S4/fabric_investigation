@@ -1,40 +1,40 @@
-# CMBS-4 Phase one fabric invesitation FABRIC tools.
+# CMB-S4 Phase one fabric investigation tools.
 
 ## Overview
-The CMB-S4 phase one use case is to "inflate" a system, demonstrate
-data flows and processing, then tear the system down. Modifying
-a running  system using fabric_objects is not in the use case.  When
-the demonstraton is done, we must tear the system  down.
+
+The CMB-S4 phase one use case is to "inflate" a system  on the FABRIC
+testbed, , demonstrate transient related data flows and processing, then
+tear the system down.  at a high level, CMB-S4 is a production system needing
+a mesh of nodes all interconnected with an IPV4 network, and an ammount of
+persistent storage.
 
 In FABRIC, a unit of provisioning is a *slice*.  For CMB-S4 a slice is
 a collection of nodes and networks.  A FABRIC site contains nodes
 and networks. Routes between site networks allow data to be sent
 between nodes on differnet sites.
 
-fabric_objects allow CMB-S4 to create and use a topology of nodes and
-networks supporting the project's "prompt" use case. Four kinds of
-objects are used to instantiate FABRIC resources: 1)A CfSlice object
-collects all other objects, invode the object's methods, and
-represents the notion of slice within FABRIC 2) A CfNode objects
-describe nodes.  3)The CfNetwork objects describe networks. In FABRIC.
-a network is the network withing a site. 4) CfNic objects describe how
-nodes connect to networks. Additionally, CfCmds objects send commands
-to nodes.  (however use planner.py to send large number of commands to
-nodes)
+planner.py is a shell commnds driver that allows CMB-S4 to create and
+use a topology of nodes and networks supporting the project's "prompt" use case.
+Planner.py uses  fabric_objects.py, a code librabry that imports a python file of
+object delclarations needed for any given test of the FABRIC
+infrastructure.
 
-A file of python object declarations is the configuration file. For
-an example, see the quickstart section, below. A Configuration file
-specifies a slice,  and any number of network, node and nic objects.
-The configuration file processing program , *planner.py* will import
-the configuration file and cause the objects to be instantated.
+Four kinds of objects are availble  to instantiate FABRIC resources: 1)A
+CfSlice object collects all other objects, invode the object's
+methods, and represents the notion of slice within FABRIC 2) A CfNode
+objects describe nodes.  3)The CfNetwork objects describe networks. In
+FABRIC.  a network is the network withing a site. 4) CfNic objects
+describe how nodes connect to networks. Additionally, CfCmds objects
+send commands to nodes.  (however use planner.py to send large number
+of commands to nodes)
 
-"Plan level" prints out, in human readable form, a good deal of
-information about what would be instantiated. This output helps an
-author determine whether the configuration is what was intended, and can
-serve to document the configuration.  Planning does not allocate
-resources in FABRIC, and does not cause any FABRIC API's to be called.
-i.e. A user running at Plan level need not be credentialed to access
-FABRIC.
+the planner.py "Plan level" prints out, in human readable form, a good
+deal of information about what in a configuration file would be
+instantiated. This output helps an author determine whether the
+configuration is what was intended, and can serve to document the
+configuration.  Planning does not allocate resources in FABRIC, and
+does not cause any FABRIC API's to be called.  i.e. A user running at
+Plan level need not be credentialed to access FABRIC.
 
 "Apply level" repeats the steps of planning, and then calls FABRIC
 APIS to instantiate the plan. A slice object is instantiated,
@@ -43,12 +43,16 @@ CfNic objects is used to connect nodes to site networks. Routes
 are setup allowing all nodes to talk to all other nodes. Finally,
 commands are issued in the order they have been declared.
 
+planner.py has a vairiety of utility funcitons, e.g. list existing
+slices, delete slaices, renew a slice, get slice health, execute
+shell commands on nodes, etc.
+
 
 ## Object Declations
 
 ### CfSlice(name, **kwargs)
 Collect the nodes and networks for a slice.                                                                                          
-                                                                                                                                         
+                                                                                              
 When planning cause the objects  to print information.                                                                               
 
 When applying, cause the objects to make relevent calls                                                                            
@@ -83,10 +87,11 @@ image  - Operating system image to load on node
 
 `Keyword arguments:
 ```
-     - cores -- Number of cores for node (def 20)
-     - ram   -- GB of ram for the node   (def 40)
-     - disk  -- GB of Disk for the node  (def 100)
-     - site  -- FABRIC site for the node.(def NCSA)
+     - cores  -- Number of cores for node (def 20)
+     - ram    -- GB of ram for the node   (def 40)
+     - disk   -- GB of Disk for the node  (def 100)
+     - site   -- FABRIC site for the node.(def NCSA)
+     -storage -- let node use a persistent store (def None)
 ```
 
 ### CfL3Network (slice, name, image, **kwrgs)
