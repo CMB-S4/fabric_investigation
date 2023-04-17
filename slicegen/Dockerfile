@@ -19,6 +19,12 @@ WORKDIR /app
 ADD ./requirements.txt /app
 ADD *.py ./
 
+# Install the python that is our app.
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
+
+
+
 # Make a directory with the same path ..
 # ... as the users' part the therir fabric files.
 # ... so we can mount the files in the container
@@ -26,11 +32,7 @@ ADD *.py ./
 
 ARG FABRIC_FILES
 RUN mkdir -p  $FABRIC_FILES
-
-# Install the python that is our app.
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
-
+RUN ln -s $FABRIC_FILES/setup.sh ./setup.sh
 
 # CLEANUP
 RUN apt-get autoremove -yqq --purge \
