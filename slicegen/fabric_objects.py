@@ -397,7 +397,10 @@ class CfL3Network(CfFabric_Base):
           self.subnet         = network.get_subnet()
           self.gateway        = network.get_gateway()
           # flatten generator to list.
-          for h in self.subnet.hosts() : self.available_ips.append(h)
+          for h in self.subnet.hosts() :
+               self.available_ips.append(h)
+               if len( self.available_ips) > 100:
+                    break
           self.available_ips.pop(0) # The gateway, is given, too remove it.
           self.get_logger().info(f"network,subnet,gateway,1st IP: {self.name},{self.subnet},{self.gateway},{self.available_ips[0]}...")
           pass\
