@@ -1,0 +1,15 @@
+{"namespace": "cmbs4.avro",
+ "type": "record",
+ "name": "raw_alert",
+ "fields": [
+     {"name": "Telescope", "type": "string"},
+     {"name": "flux90",    "type": "float"},
+     {"name": "flux150",   "type": "float"},
+     {"name": "ra",        "type": "float"},
+     {"name": "dec",       "type": "float"},
+     {"name": "time",      "type":"float"},
+     {"name" : "cutout90", "type": {"type" : "array", "items" :{"type": "array", "items": "float"}}},
+     {"name" : "cutout150","type": {"type" : "array", "items" :{"type": "array", "items": "float"}}}
+ ]
+}
+
