@@ -1,3 +1,13 @@
+"""
+example of using AVRO as a binary format for undecorated alerts.
+
+The current croto  allow the AVRO default which is to put the schema in the file.
+the payloa is 993 bytes, the file is 1600 bytes.
+It gzips down to 1250 bytes 20% overhead
+ 
+It possible to omit the schema. 
+"""
+
 import avro.schema
 import time
 import random
