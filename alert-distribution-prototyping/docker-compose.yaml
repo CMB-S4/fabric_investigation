@@ -1,0 +1,13 @@
+version: '3'
+services:
+  pubisher:
+    build:
+        context: .
+        dockerfile: Dockerfile.publisher
+    ports:
+      - "8000:8000"
+  transient_sender:
+    build:
+        context: .
+        dockerfile: Dockerfile.transient_sender
+ 
