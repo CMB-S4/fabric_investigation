@@ -14,7 +14,11 @@ from avro.io import DatumReader, DatumWriter, BinaryEncoder, BinaryDecoder
 
 
 url = "http://localhost:8000/upload_raw"
+url = "http://pubisher:8000/upload_raw"
 
+import time
+time.sleep(10)
+print ("AWAKE.......")
 
 files = {"file": ("image.jpg", open("image.jpg", "rb"), "image/jpeg")}
 

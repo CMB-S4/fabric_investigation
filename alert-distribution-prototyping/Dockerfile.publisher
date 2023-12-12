@@ -17,5 +17,6 @@ EXPOSE 80
 ENV NAME World
 
 # Run app.py when the container launches
-CMD ["uvicorn", "alert_publisher:app", "--reload"]
+#  note that the default of 127.0.0.1 does not work 
+CMD ["uvicorn", "alert_publisher:app", "--log-level", "trace", "--host",  "0.0.0.0"  ]
 #CMD ["python", "alert_publisher.py"]

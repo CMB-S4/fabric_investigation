@@ -6,9 +6,10 @@ services:
         dockerfile: Dockerfile.publisher
     ports:
         - "8000:8000"
-#  transient_sender:
-#    build:
-#        context: .
-#        dockerfile: Dockerfile.transient_sender
-#    ports:
-#        - "8001:8001"
+    expose:
+        - 8000
+  transient_sender:
+    build:
+        context: .
+        dockerfile: Dockerfile.transient_sender
+
